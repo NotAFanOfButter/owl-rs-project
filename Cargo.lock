@@ -811,13 +811,13 @@ dependencies = [
 [[package]]
 name = "raw-gl-context"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4590d88b5f7f4a7b140a2bbb90085c2c3c9ac80832e53521a47c6a4ac1adbc3"
+source = "git+https://github.com/glowcoil/raw-gl-context.git#b68a05b4dc02a98a7c0c0f679a8e94fa528a3517"
 dependencies = [
  "cocoa",
  "core-foundation",
  "objc",
  "raw-window-handle 0.3.4",
+ "uuid",
  "winapi",
  "x11",
 ]
@@ -1087,6 +1087,15 @@ name = "unicode-segmentation"
 version = "1.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1dd624098567895118886609431a7c3b8f516e41d30e0643f03d94592a147e36"
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "getrandom",
+]
 
 [[package]]
 name = "version_check"
