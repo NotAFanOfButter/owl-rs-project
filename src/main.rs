@@ -1,4 +1,4 @@
-use winit;
+use winit::{self, event_loop};
 use raw_gl_context;
 use gl;
 
@@ -10,14 +10,16 @@ fn main() {
         window,
     };
     use raw_gl_context::{GlConfig,GlContext};
+
     let event_loop = EventLoop::new().expect("Should have created an event loop");
+    event_loop.set_control_flow(event_loop::ControlFlow::Poll);
     let window = window::WindowBuilder::new()
         .with_inner_size(LogicalSize::new(800,600))
         .with_title("opengl-winit")
         .with_enabled_buttons(winit::window::WindowButtons::CLOSE)
         .build(&event_loop).expect("Failed to create a window");
     let context = unsafe { GlContext::create(&window,
-        GlConfig { version: (3,3), ..Default::default() })
+        GlConfig { version: (4,3), ..Default::default() })
         .expect("Failed to create an OpenGL context") };
     unsafe {
         context.make_current();
@@ -31,7 +33,7 @@ fn main() {
                     WindowEvent::CloseRequested => elwt.exit(),
                     WindowEvent::RedrawRequested => {
                         unsafe {
-                            gl::ClearColor(0.0, 0.0, 1.0, 1.0);
+                            gl::ClearColor(0.0, 0.0, 0.0, 1.0);
                             gl::Clear(gl::COLOR_BUFFER_BIT);
                         }
                         context.swap_buffers();
