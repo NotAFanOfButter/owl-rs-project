@@ -716,9 +716,8 @@ checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 name = "opengl-winit"
 version = "0.1.0"
 dependencies = [
- "gl",
+ "owl",
  "raw-gl-context",
- "raw-window-handle 0.6.0",
  "winit",
 ]
 
@@ -729,6 +728,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52f0d54bde9774d3a51dcf281a5def240c71996bc6ca05d2c847ec8b2b216166"
 dependencies = [
  "libredox",
+]
+
+[[package]]
+name = "owl"
+version = "0.1.0"
+dependencies = [
+ "gl",
+ "raw-gl-context",
+ "raw-window-handle 0.6.0",
 ]
 
 [[package]]
