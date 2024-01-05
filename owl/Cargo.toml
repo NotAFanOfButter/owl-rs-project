@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bitflags = "2.4.1"
 gl = "0.14.0"
 raw-gl-context = { git = "https://github.com/glowcoil/raw-gl-context.git" }
 raw-window-handle = "0.6.0"
+trait-derives = { path = "src/buffers/trait-derives" }

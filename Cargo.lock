@@ -734,6 +734,7 @@ dependencies = [
 name = "owl"
 version = "0.1.0"
 dependencies = [
+ "bitflags 2.4.1",
  "gl",
  "raw-gl-context",
  "raw-window-handle 0.6.0",
