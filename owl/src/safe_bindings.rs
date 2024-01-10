@@ -144,8 +144,13 @@ pub fn BufferData<T>(target: BufferType, data: &[T], usage: BufferUsage) {
 /// offset + size(data) <= buffer size
 /// alignment *must* be respected
 /// offset: respects alignment
+///
 /// # Notes
 /// offset: measured in bytes
+///
+/// # Errors
+/// `GL_INVALID_OPERATON`: zero is bound to target, target is being mapped
+/// `GL_INVALID_VALUE`: offset + size > buffer size
 pub fn BufferSubData<T>(target: BufferType, data: &[T], offset: usize) {
     unsafe {
         gl::BufferSubData(target.into(), offset as isize, std::mem::size_of_val(data) as isize, data.as_ptr().cast())

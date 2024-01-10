@@ -1,3 +1,5 @@
+use crate::{ArrayBuffer, traits::ToByteVec};
+
 pub enum AttributeType {
     Bool,
     Int,
@@ -22,10 +24,10 @@ pub struct Attribute {
     pub glsl_type: AttributeType,
 }
 /// An input to the shader pipeline, stored in a [VertexArray].
-pub struct Input {
+pub struct Input<'a, T: ToByteVec> {
     index: u32,
     attribute: Attribute,
-    buffer: &'a ArrayBuffer
+    buffer: &'a ArrayBuffer<T>
 }
 
 pub struct VertexArray {

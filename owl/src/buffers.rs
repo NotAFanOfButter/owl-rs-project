@@ -1,48 +1,54 @@
 use crate::ox;
+use crate::traits::ToByteVec;
 use crate::{OwlError, UnmessagedError};
 pub use ox::BufferUsage;
-
-mod traits;
-pub use traits::ToByteVec;
 
 /// A struct to couple the name / id of a buffer with ownership of its data.
 /// For now, it does not actually contain the data stored in OpenGL memory
 #[derive(Clone, Debug)]
-struct Buffer {
+struct Buffer<T: ToByteVec> {
     id: ox::Buffer,
+    _ghost: std::marker::PhantomData<T>
 }
-impl Buffer {
+impl<T: ToByteVec> Buffer<T> {
     fn new() -> Self {
-        Buffer { id: ox::gen_buffer() }
+        Buffer {
+            id: ox::gen_buffer(),
+            _ghost: std::marker::PhantomData,
+        }
     }
 }
-impl Default for Buffer {
+impl<T: ToByteVec> Default for Buffer<T> {
     fn default() -> Self {
         Self::new()
     }
 }
-impl PartialEq for Buffer {
+impl<T: ToByteVec> PartialEq for Buffer<T> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
-impl Eq for Buffer {}
+impl<T: ToByteVec> Eq for Buffer<T> {}
 /// A wrapper around [Buffer], that allows functions using it to specify the `ARRAY_BUFFER` target
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ArrayBuffer(Buffer);
-impl ArrayBuffer {
+pub struct ArrayBuffer<T: ToByteVec>(Buffer<T>);
+impl<T: ToByteVec> ArrayBuffer<T> {
     // INVARIANT: buffer will not be deleted until it is dropped
     // fewer calls can fail, reducing error handling, but they now "expect"
     /// # Errors
     /// out of memory
-    pub fn new<T>(data: Vec<T>, usage: BufferUsage) -> Result<Self,OwlError> {
-        let id = ox::gen_buffer();
+    pub fn new(data: Vec<T>, usage: BufferUsage) -> Result<Self, OwlError> 
+        where T: ToByteVec {
+        let created = Self(Buffer::new());
+        created.bind();
         ox::buffer_data(ox::BufferType::Array, &data, usage)
             .map_err(|e| e.with_message("failed to buffer data"))?;
-        Ok(Self(Buffer { id }))
+        Ok(created)
     }
-    pub fn update<T>(data: Vec<T>, offset: usize) -> Result<Self, OwlError> {
-
+    pub fn update(&mut self, data: Vec<T>, offset: usize) -> Result<(),OwlError> {
+        self.bind();
+        ox::buffer_subdata(ox::BufferType::Array, &data, offset)
+            .map_err(|e| e.with_message("failed to replace existing data"))
     }
     // let's see if we can't limit the scope to crate.
     pub(crate) fn bind(&self) {
@@ -54,7 +60,7 @@ impl ArrayBuffer {
             .expect("binding 0 always succeeds")
     }
 }
-impl Drop for ArrayBuffer {
+impl<T: ToByteVec> Drop for ArrayBuffer<T> {
     fn drop(&mut self) {
         ox::delete_buffer(self.0.id)
     }
@@ -62,17 +68,24 @@ impl Drop for ArrayBuffer {
 
 /// A wrapper around [Buffer], that allows functions using it to specify the `ARRAY_BUFFER` target
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ElementBuffer(Buffer);
-impl ElementBuffer {
+pub struct ElementBuffer<T: ToByteVec>(Buffer<T>);
+impl<T: ToByteVec> ElementBuffer<T> {
     // INVARIANT: buffer will not be deleted until it is dropped
     // fewer calls can fail, reducing error handling, but they now "expect"
     /// # Errors
     /// out of memory
-    pub fn new<T>(data: Vec<T>, usage: BufferUsage) -> Result<Self,OwlError> {
-        let id = ox::gen_buffer();
+    pub fn new(data: Vec<T>, usage: BufferUsage) -> Result<Self, OwlError> 
+        where T: ToByteVec {
+        let created = Self(Buffer::new());
+        created.bind();
         ox::buffer_data(ox::BufferType::ElementArray, &data, usage)
             .map_err(|e| e.with_message("failed to buffer data"))?;
-        Ok(Self(Buffer { id }))
+        Ok(created)
+    }
+    pub fn update(&mut self, data: Vec<T>, offset: usize) -> Result<(),OwlError> {
+        self.bind();
+        ox::buffer_subdata(ox::BufferType::ElementArray, &data, offset)
+            .map_err(|e| e.with_message("failed to replace existing data"))
     }
     /// let's see if we can't limit the scope to crate.
     pub(crate) fn bind(&self) {
@@ -80,11 +93,10 @@ impl ElementBuffer {
             .expect("buffer should not be deleted yet")
     }
     pub(crate) fn unbind(&self) {
-        ox::bind_buffer(ox::BufferType::Array, None)
-            .expect("binding 0 always succeeds")
+        ox::bind_buffer(ox::BufferType::Array, None).expect("binding 0 always succeeds")
     }
 }
-impl Drop for ElementBuffer {
+impl<T: ToByteVec> Drop for ElementBuffer<T> {
     fn drop(&mut self) {
         ox::delete_buffer(self.0.id)
     }

@@ -85,11 +85,26 @@ pub fn bind_buffer(target: BufferType, buffer: Option<Buffer>) -> Result<(),OxEr
     last_error_as_result()
 }
 pub use safe_bindings::BufferUsage;
+use crate::traits::ToByteVec;
 /// # Errors
 /// `GL_INVALID_OPERATON`: `GL_BUFFER_IMMUTABLE_STORAGE` flag of target set to `GL_TRUE`
 /// `GL_OUT_OF_MEMORY`
-pub fn buffer_data<T>(target: BufferType, data: &[T], usage: BufferUsage) -> Result<(),OxError> {
-    safe_bindings::BufferData(target, data, usage);
+pub fn buffer_data<T>(target: BufferType, data: &[T], usage: BufferUsage) -> Result<(),OxError> 
+    where T: ToByteVec {
+    safe_bindings::BufferData(target, data.to_byte_vec().as_slice(), usage);
+    last_error_as_result()
+}
+
+/// # Errors
+/// `GL_INVALID_OPERATON`: zero is bound to target, target is being mapped
+/// `GL_INVALID_VALUE`: offset + size > buffer size
+/// 
+/// # Notes
+/// offset in multiples of T
+pub fn buffer_subdata<T>(target: BufferType, subdata: &[T], offset: usize) -> Result<(),OxError>
+    where T: ToByteVec {
+    let byte_vec = subdata.to_byte_vec();
+    safe_bindings::BufferSubData(target, byte_vec.as_slice(), offset * std::mem::size_of_val(&byte_vec));
     last_error_as_result()
 }
 
