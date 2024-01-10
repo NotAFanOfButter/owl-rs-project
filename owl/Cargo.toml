@@ -10,4 +10,4 @@ bitflags = "2.4.1"
 gl = "0.14.0"
 raw-gl-context = { git = "https://github.com/glowcoil/raw-gl-context.git" }
 raw-window-handle = "0.6.0"
-trait-derives = { path = "src/buffers/trait-derives" }
+trait-derives = { path = "trait-derives" }
