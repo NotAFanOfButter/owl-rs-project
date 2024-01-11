@@ -169,6 +169,17 @@ pub fn GenVertexArrays(vertex_arrays: &mut [u32]) {
 pub fn GenVertexArray(vertex_array: &mut u32) {
     GenVertexArrays(std::slice::from_mut(vertex_array));
 }
+/// # GL Invariants
+/// length of vertex_arrays >= 0
+pub fn DeleteVertexArrays(vertex_arrays: &[u32]) {
+    unsafe {
+        // n: >= 0
+        gl::DeleteVertexArrays(vertex_arrays.len() as i32, vertex_arrays.as_ptr())
+    }
+}
+pub fn DeleteVertexArray(vertex_array: u32) {
+    DeleteVertexArrays(&[vertex_array])
+}
 
 /// # User Invariants
 /// vertex_array: is a valid vertex array returned by `glGenVertexArrays` or 0

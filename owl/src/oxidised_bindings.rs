@@ -124,6 +124,13 @@ pub fn gen_vertex_array() -> VertexArray {
     safe_bindings::GenVertexArray(&mut id);
     VertexArray(id)
 }
+pub fn delete_vertex_arrays(vertex_arrays: Vec<VertexArray>) {
+    let ids: Vec<u32> = vertex_arrays.iter().map(|v| v.0).collect();
+    safe_bindings::DeleteVertexArrays(ids.as_slice());
+}
+pub fn delete_vertex_array(vertex_array: VertexArray) {
+    safe_bindings::DeleteVertexArray(vertex_array.0);
+}
 
 /// # Errors
 /// `GL_INVALID_VALUE`: vertex_array was deleted
