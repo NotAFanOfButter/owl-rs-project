@@ -72,27 +72,8 @@ impl<T: ToByteVec, const C: usize> ToByteVec for [T; C] {
         self.into_iter().map(|t| t.to_byte_vec()).flatten().collect()
     }
 }
-impl<T: ToByteVec> ToByteVec for &[T] {
-    fn to_byte_vec(self) -> Vec<u8> {
-        self.into_iter().map(|t| t.to_byte_vec()).flatten().collect()
-    }
-}
 impl<T: ToByteVec> ToByteVec for Vec<T> {
     fn to_byte_vec(self) -> Vec<u8> {
-        self.as_slice().to_byte_vec()
-    }
-}
-
-struct PlaceHolder {
-    a: u8,
-    b: [u8; 12],
-}
-
-impl ToByteVec for PlaceHolder {
-    fn to_byte_vec(self) -> Vec<u8> {
-        let mut v = Vec::new();
-        v.extend(self.a.to_byte_vec());
-        v.extend(self.b.to_byte_vec());
-        v
+        self.into_iter().map(|t| t.to_byte_vec()).flatten().collect()
     }
 }
