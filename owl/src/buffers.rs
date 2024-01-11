@@ -33,7 +33,7 @@ impl<T: ToByteVec> Eq for Buffer<T> {}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ArrayBuffer<T: ToByteVec>(Buffer<T>);
 impl<T: ToByteVec> ArrayBuffer<T> {
-    // INVARIANT: buffer will not be deleted until it is dropped
+    // INVARIANT: will not be deleted until it is dropped
     // fewer calls can fail, reducing error handling, but they now "expect"
     /// # Errors
     /// out of memory
@@ -41,13 +41,13 @@ impl<T: ToByteVec> ArrayBuffer<T> {
         where T: ToByteVec {
         let created = Self(Buffer::new());
         created.bind();
-        ox::buffer_data(ox::BufferType::Array, &data, usage)
+        ox::buffer_data(ox::BufferType::Array, data, usage)
             .map_err(|e| e.with_message("failed to buffer data"))?;
         Ok(created)
     }
     pub fn update(&mut self, data: Vec<T>, offset: usize) -> Result<(),OwlError> {
         self.bind();
-        ox::buffer_subdata(ox::BufferType::Array, &data, offset)
+        ox::buffer_subdata(ox::BufferType::Array, data, offset)
             .map_err(|e| e.with_message("failed to replace existing data"))
     }
     // let's see if we can't limit the scope to crate.
@@ -78,13 +78,13 @@ impl<T: ToByteVec> ElementBuffer<T> {
         where T: ToByteVec {
         let created = Self(Buffer::new());
         created.bind();
-        ox::buffer_data(ox::BufferType::ElementArray, &data, usage)
+        ox::buffer_data(ox::BufferType::ElementArray, data, usage)
             .map_err(|e| e.with_message("failed to buffer data"))?;
         Ok(created)
     }
     pub fn update(&mut self, data: Vec<T>, offset: usize) -> Result<(),OwlError> {
         self.bind();
-        ox::buffer_subdata(ox::BufferType::ElementArray, &data, offset)
+        ox::buffer_subdata(ox::BufferType::ElementArray, data, offset)
             .map_err(|e| e.with_message("failed to replace existing data"))
     }
     /// let's see if we can't limit the scope to crate.
