@@ -250,7 +250,7 @@ impl From<DataTypeSizeBgra> for DataType {
         }
     }
 }
-pub enum AttribSpec {
+pub enum VertexFormat {
     Size1 { normalised: bool, data_type: DataTypeUnsized },
     Size2 { normalised: bool, data_type: DataTypeUnsized },
     Size3 { normalised: bool, data_type: DataTypeSize3 },
@@ -268,14 +268,14 @@ pub enum AttribSpec {
 /// # Errors
 /// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
 /// `GL_INVALID_OPERATON`: array buffer bound to 0, offset != 0
-pub fn vertex_attrib_pointer(attribute_index: u8, spec: AttribSpec,
+pub fn vertex_attrib_pointer(attribute_index: u8, spec: VertexFormat,
     stride: usize, offset: usize) -> Result<(),OxError> {
     let (size, data_type, normalised) = match spec {
-        AttribSpec::Size1 { normalised, data_type } => (AttribSize::One, data_type.into(), normalised),
-        AttribSpec::Size2 { normalised, data_type } => (AttribSize::Two, data_type.into(), normalised),
-        AttribSpec::Size3 { normalised, data_type } => (AttribSize::Three, data_type.into(), normalised),
-        AttribSpec::Size4 { normalised, data_type } => (AttribSize::Four, data_type.into(), normalised),
-        AttribSpec::SizeBgra(data_type) => (AttribSize::Bgra, data_type.into(), false)
+        VertexFormat::Size1 { normalised, data_type } => (AttribSize::One, data_type.into(), normalised),
+        VertexFormat::Size2 { normalised, data_type } => (AttribSize::Two, data_type.into(), normalised),
+        VertexFormat::Size3 { normalised, data_type } => (AttribSize::Three, data_type.into(), normalised),
+        VertexFormat::Size4 { normalised, data_type } => (AttribSize::Four, data_type.into(), normalised),
+        VertexFormat::SizeBgra(data_type) => (AttribSize::Bgra, data_type.into(), false)
     };
     safe_bindings::VertexAttribPointer(attribute_index, size, data_type, normalised, stride, offset);
     last_error_as_result()
