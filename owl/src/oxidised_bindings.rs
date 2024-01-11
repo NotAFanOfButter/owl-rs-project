@@ -89,7 +89,7 @@ use crate::traits::ToByteVec;
 /// # Errors
 /// `GL_INVALID_OPERATON`: `GL_BUFFER_IMMUTABLE_STORAGE` flag of target set to `GL_TRUE`
 /// `GL_OUT_OF_MEMORY`
-pub fn buffer_data<T>(target: BufferType, data: &[T], usage: BufferUsage) -> Result<(),OxError> 
+pub fn buffer_data<T>(target: BufferType, data: Vec<T>, usage: BufferUsage) -> Result<(),OxError> 
     where T: ToByteVec {
     safe_bindings::BufferData(target, data.to_byte_vec().as_slice(), usage);
     last_error_as_result()
@@ -101,7 +101,7 @@ pub fn buffer_data<T>(target: BufferType, data: &[T], usage: BufferUsage) -> Res
 /// 
 /// # Notes
 /// offset in multiples of T
-pub fn buffer_subdata<T>(target: BufferType, subdata: &[T], offset: usize) -> Result<(),OxError>
+pub fn buffer_subdata<T>(target: BufferType, subdata: Vec<T>, offset: usize) -> Result<(),OxError>
     where T: ToByteVec {
     let byte_vec = subdata.to_byte_vec();
     safe_bindings::BufferSubData(target, byte_vec.as_slice(), offset * std::mem::size_of_val(&byte_vec));
