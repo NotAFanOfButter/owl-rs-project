@@ -3,7 +3,7 @@ use raw_gl_context;
 
 use owl;
 
-fn main() {
+fn main() -> Result<(), owl::OwlError> {
     use winit::{
         dpi::LogicalSize,
         event::{Event,WindowEvent},
@@ -27,19 +27,25 @@ fn main() {
     }
     owl::load_proc(&context);
 
+    use owl::ToByteVec;
+    #[derive(ToByteVec)]
+    struct Vertex(f32,f32,f32);
     let vertices = vec![
-        -0.5,   0.5,    0.0,
-        -0.5,   -0.5,   0.0,
-        0.5,    0.5,    0.0,
-        0.5,    -0.5,   0.0,
+        Vertex(-0.5, 0.5, 0.0),
+        Vertex(-0.5, -0.5, 0.0),
+        Vertex(0.5, 0.5, 0.0),
+        Vertex(0.5, -0.5, 0.0),
     ];
-    let vertex_buffer = owl::ArrayBuffer::new_data(owl::TypedData::Float32(vertices),
-        owl::BufferUsage::StaticDraw)
-        .expect("failed to create array buffer");
+    let vertex_buffer = owl::ArrayBuffer::new(vertices, owl::BufferUsage::StaticDraw)?;
     let indices = vec![
         0, 1, 2,
     ];
     let mut vertex_array_object = owl::VertexArray::new();
+    vertex_array_object.add_input(
+        owl::Attribute { name: "pos".to_owned(), glsl_type: owl::AttributeType::Vec3 },
+        owl::AttributePointer { buffer: &vertex_buffer, stride: 3*std::mem::size_of::<f32>(), offset: 0,
+            format: owl::VertexFormat::Size3 { normalised: false, data_type: owl::DataTypeSize3::Float }}
+    )?;
     vertex_array_object.add_input_from_buffer(&vertex_buffer, owl::Attribute::Vec3("pos".to_owned()), false, 3, 0)
         .expect("failed to add vertex attribute");
     vertex_array_object.add_element_buffer_data(owl::TypedData::U32(indices), owl::BufferUsage::StaticDraw)
@@ -76,4 +82,5 @@ fn main() {
             _ => ()
         }
     }).expect("Failed to run an event loop");
+    Ok(())
 }

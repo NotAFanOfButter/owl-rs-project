@@ -5,6 +5,7 @@ use raw_gl_context::GlContext;
 mod safe_bindings;
 mod traits;
 pub use traits::*;
+pub use trait_derives::*;
 mod oxidised_bindings;
 pub(crate) use oxidised_bindings as ox;
 
