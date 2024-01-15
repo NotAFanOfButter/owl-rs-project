@@ -1,23 +1,24 @@
-use winit::{self, event_loop};
-use raw_gl_context;
+use winit::{
+    dpi::LogicalSize,
+    event::{Event,WindowEvent},
+    event_loop::{EventLoop,ControlFlow},
+    window::{WindowButtons,WindowBuilder},
+};
+use raw_gl_context::{GlConfig,GlContext};
 
-use owl;
+use owl::prelude::*;
 
 fn main() -> Result<(), owl::OwlError> {
-    use winit::{
-        dpi::LogicalSize,
-        event::{Event,WindowEvent},
-        event_loop::EventLoop,
-        window,
-    };
-    use raw_gl_context::{GlConfig,GlContext};
+    /*
+    Setup
+    */
 
     let event_loop = EventLoop::new().expect("failed to create an event loop");
-    event_loop.set_control_flow(event_loop::ControlFlow::Poll);
-    let window = window::WindowBuilder::new()
+    event_loop.set_control_flow(ControlFlow::Poll);
+    let window = WindowBuilder::new()
         .with_inner_size(LogicalSize::new(800,600))
         .with_title("Opengl Square")
-        .with_enabled_buttons(winit::window::WindowButtons::CLOSE)
+        .with_enabled_buttons(WindowButtons::CLOSE)
         .build(&event_loop).expect("failed to create a window");
     let context = unsafe { GlContext::create(&window,
         GlConfig { version: (4,3), ..Default::default() })
