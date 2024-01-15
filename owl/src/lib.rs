@@ -3,22 +3,22 @@
 use raw_gl_context::GlContext;
 
 mod safe_bindings;
-mod traits;
-pub use traits::*;
-pub use trait_derives::*;
-mod oxidised_bindings;
+pub mod oxidised_bindings;
 pub(crate) use oxidised_bindings as ox;
 
 pub fn load_proc(context: &GlContext) {
     gl::load_with(|symbol| context.get_proc_address(symbol) as *const _);
 }
 
+mod traits;
 mod errors;
 pub use errors::*;
 mod buffers;
 pub use buffers::*;
 mod vertex_arrays;
 pub use vertex_arrays::*;
+
+pub mod prelude;
 
 //
 // #[derive(Debug)]
