@@ -28,7 +28,16 @@ fn main() -> Result<(), owl::OwlError> {
     }
     owl::load_proc(&context);
 
-    use owl::ToByteVec;
+    /*
+    Shader Pipeline
+    */
+
+    
+
+    /*
+    Vertices
+    */
+
     #[derive(ToByteVec)]
     struct Vertex(f32,f32,f32);
     let vertices = vec![
