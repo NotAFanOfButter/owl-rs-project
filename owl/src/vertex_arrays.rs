@@ -1,7 +1,7 @@
+use crate::prelude::*;
 use crate::ArrayBuffer;
 use crate::ElementBuffer;
 use crate::OwlError;
-use crate::ToByteVec;
 use crate::oxidised_bindings as ox;
 
 pub use ox::{ VertexFormat, DataTypeSize3, DataTypeSize4, DataTypeSizeBgra, DataTypeUnsized };
@@ -70,13 +70,19 @@ impl<T: ToByteVec> VertexArray<T> {
             elements: None
         }
     }
-    pub fn add_input(&mut self, attribute: Attribute, pointer: AttributePointer<T>) -> Result<(),OwlError> {
+    pub fn with_indices(mut self, buffer: ElementBuffer<T>) -> Self {
+        self.bind();
+        buffer.bind();
+        self.elements = Some(buffer);
+        self
+    }
+    pub fn with_input<U: ToByteVec>(mut self, attribute: Attribute, pointer: AttributePointer<U>) -> Result<Self,OwlError> {
         // max inputs should never be allowed to be >= 256
         let next_index = self.inputs.len() as u8;
         if next_index > self.max_inputs {
             self.bind();
             self.inputs.push(Input::new(next_index, attribute, pointer));
-            Ok(())
+            Ok(self)
         } else {
             Err(OwlError::custom("maximum inputs reached"))
         }

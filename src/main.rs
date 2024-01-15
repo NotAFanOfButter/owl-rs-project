@@ -40,16 +40,22 @@ fn main() -> Result<(), owl::OwlError> {
     let indices = vec![
         0, 1, 2,
     ];
-    let mut vertex_array_object = owl::VertexArray::new();
-    vertex_array_object.add_input(
-        owl::Attribute { name: "pos".to_owned(), glsl_type: owl::AttributeType::Vec3 },
-        owl::AttributePointer { buffer: &vertex_buffer, stride: 3*std::mem::size_of::<f32>(), offset: 0,
-            format: owl::VertexFormat::Size3 { normalised: false, data_type: owl::DataTypeSize3::Float }}
-    )?;
-    vertex_array_object.add_input_from_buffer(&vertex_buffer, owl::Attribute::Vec3("pos".to_owned()), false, 3, 0)
-        .expect("failed to add vertex attribute");
-    vertex_array_object.add_element_buffer_data(owl::TypedData::U32(indices), owl::BufferUsage::StaticDraw)
-        .expect("failed to create / add element buffer");
+    let index_buffer = owl::ElementBuffer::new(indices, owl::BufferUsage::StaticDraw)?;
+    let mut vertex_array_object = owl::VertexArray::new()
+        .with_indices(index_buffer)
+        .with_input(
+            owl::Attribute { name: "pos".to_owned(), glsl_type: owl::AttributeType::Vec3 },
+            owl::AttributePointer { 
+                buffer: &vertex_buffer,
+                stride: 3 * std::mem::size_of::<f32>(),
+                offset: 0,
+                format: owl::VertexFormat::Size3 { normalised: false, data_type: owl::DataTypeSize3::Float }
+            }
+        )?;
+    // vertex_array_object.add_input_from_buffer(&vertex_buffer, owl::Attribute::Vec3("pos".to_owned()), false, 3, 0)
+    //     .expect("failed to add vertex attribute");
+    // vertex_array_object.add_element_buffer_data(owl::TypedData::U32(indices), owl::BufferUsage::StaticDraw)
+    //     .expect("failed to create / add element buffer");
     let shader_program = owl::ShaderPipeline::new(430).expect("failed to create pipeline")
         .with_inputs_from_vertex_array(&vertex_array_object)
         .with_vertex_body(r#"
