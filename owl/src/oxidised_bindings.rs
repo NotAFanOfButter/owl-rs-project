@@ -439,7 +439,49 @@ pub fn delete_program(program: ShaderProgram) -> Result<(),OxError> {
 /// `GL_INVALID_VALUE`: program was deleted
 pub fn link_program(program: ShaderProgram) -> Result<(),OxError> {
     safe_bindings::LinkProgram(program.0);
-    last_error_as_result()
+    last_error_as_result()?;
+    match get_program_link_status(program).expect("program linked, so must be valid") {
+        LinkStatus::Succeeded => Ok(()),
+        LinkStatus::Failed => Err(ShaderError::LinkingFailed {
+            info_log: get_program_info_log(program).expect("program linked, so must be valid")
+        }.into())
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum LinkStatus {
+    Succeeded,
+    Failed
+}
+/// # Errors
+/// `GL_INVALID_OPERATION`: program deleted
+pub fn get_program_link_status(program: ShaderProgram) -> Result<LinkStatus, OxError> {
+    let mut link_success = 0;
+    safe_bindings::GetProgramiv(program.0, safe_bindings::ProgramParameter::LinkStatus, &mut link_success);
+    last_error_as_result()?;
+    match link_success as u8 {
+        safe_bindings::glTrue => Ok(LinkStatus::Succeeded),
+        safe_bindings::glFalse => Ok(LinkStatus::Failed),
+        _ => unreachable!("link_success is (in practice) a boolean")
+    }
+}
+/// # Errors
+/// `GL_INVALID_OPERATION`: program was deleted
+pub fn get_program_info_log_length(program: ShaderProgram) -> Result<usize, OxError> {
+    let mut data = 0;
+    safe_bindings::GetProgramiv(program.0, safe_bindings::ProgramParameter::InfoLogLength, &mut data);
+    last_error_as_result()?;
+    Ok(data as usize)
+}
+
+/// # Errors
+/// `GL_INVALID_OPERATION`: program was deleted
+pub fn get_program_info_log(program: ShaderProgram) -> Result<String, OxError> {
+    let mut buffer = vec![0; get_program_info_log_length(program)?];
+    safe_bindings::GetProgramInfoLog(program.0, buffer.as_mut_slice(), None);
+    // program valid as it got length -> no need for error checking
+    let utf8_buffer: Vec<u8> = buffer.iter().take(buffer.len()-1).map(|&i| i as u8).collect();
+    Ok(String::from_utf8_lossy(&utf8_buffer).to_string())
 }
 
 /// # Errors
