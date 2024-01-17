@@ -17,6 +17,8 @@ mod buffers;
 pub use buffers::*;
 mod vertex_arrays;
 pub use vertex_arrays::*;
+mod shaders;
+pub use shaders::*;
 
 pub mod prelude;
 
