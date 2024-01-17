@@ -400,7 +400,7 @@ pub fn get_shader_delete_status(shader: Shader) -> Result<ShaderDeleteStatus, Ox
     }
 }
 /// # Errors
-/// `GL_INVALID_VALUE`: shader has been deleted
+/// `GL_INVALID_OPERATION`: shader has been deleted
 pub fn get_shader_info_log_length(shader: Shader) -> Result<usize, OxError> {
     let mut data = 0;
     safe_bindings::GetShaderiv(shader.0, safe_bindings::ShaderParameter::InfoLogLength, &mut data);
@@ -408,7 +408,7 @@ pub fn get_shader_info_log_length(shader: Shader) -> Result<usize, OxError> {
     Ok(data as usize)
 }
 /// # Errors
-/// `GL_INVALID_VALUE`: shader has been deleted
+/// `GL_INVALID_OPERATION`: shader has been deleted
 pub fn get_shader_info_log(shader: Shader) -> Result<String, OxError> {
     let mut buffer = vec![0; get_shader_info_log_length(shader)?];
     safe_bindings::GetShaderInfoLog(shader.0, buffer.as_mut_slice(), None);
