@@ -56,24 +56,26 @@ fn main() -> Result<(), owl::OwlError> {
                 format: owl::VertexFormat::Size3 { normalised: false, data_type: owl::DataTypeSize3::Float }
             }
         )?;
-    // vertex_array_object.add_input_from_buffer(&vertex_buffer, owl::Attribute::Vec3("pos".to_owned()), false, 3, 0)
-    //     .expect("failed to add vertex attribute");
-    // vertex_array_object.add_element_buffer_data(owl::TypedData::U32(indices), owl::BufferUsage::StaticDraw)
-    //     .expect("failed to create / add element buffer");
-    let shader_program = owl::ShaderPipeline::new(430).expect("failed to create pipeline")
-        .with_inputs_from_vertex_array(&vertex_array_object)
-        .with_vertex_body(r#"
-        void main() {
-            gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
-        }
-        "#).expect("failed to parse vertex body")
-        .with_fragment_body(r#"
-        void main() {
-            colour = vec4(0.0, 0.5, 0.5, 1.0);
-        }
-        "#, "colour").expect("failed to parse fragment body")
-        .compile()
-        .unwrap_or_else(|e| panic!("{e}"));
+
+    //
+    // Shader Pipeline
+    //
+    let shader_program = owl::ShaderPipeline::new(430)?
+        .inputs_from_vertex_array(&vertex_array_object)
+        .vertex_body(r#"
+            void main() {
+                gl_Position = vec4(pos, 1.0);
+            }
+            "#).expect("no nul bytes")
+        .fragment_body(r#"
+            void main() {
+                colour = vec4(0.0, 0.5, 0.5, 1.0);
+            }
+            "#,
+            owl::Attribute { name: "colour".to_string(), glsl_type: owl::AttributeType::Vec4 })
+            .expect("no nul bytes")
+        .compile()?;
+    
     let triangle = owl::Mesh { start: 0, count: 4 };
 
     event_loop.run(|event, elwt| {
