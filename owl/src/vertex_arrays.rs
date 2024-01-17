@@ -1,34 +1,8 @@
 use crate::prelude::*;
-use crate::ArrayBuffer;
-use crate::ElementBuffer;
-use crate::OwlError;
+use crate::{ArrayBuffer,Attribute,ElementBuffer,Input,OwlError};
 use crate::oxidised_bindings as ox;
 
 pub use ox::{ VertexFormat, DataTypeSize3, DataTypeSize4, DataTypeSizeBgra, DataTypeUnsized };
-
-pub enum AttributeType {
-    Bool,
-    Int,
-    Float,
-    Vec2,
-    Vec3,
-    Vec4,
-    BVec2,
-    BVec3,
-    BVec4,
-    IVec2,
-    IVec3,
-    IVec4,
-    Mat2,
-    Mat3,
-    Mat4
-}
-/// Generic attribute with a name and glsl type,
-/// used as part of an input, uniform, or pipe
-pub struct Attribute {
-    pub name: String,
-    pub glsl_type: AttributeType,
-}
 
 type Bytes = usize;
 pub struct AttributePointer<'a, T: ToByteVec> {
@@ -38,25 +12,10 @@ pub struct AttributePointer<'a, T: ToByteVec> {
     pub format: VertexFormat,
 }
 
-/// An input to the shader pipeline, stored in a [VertexArray].
-pub struct Input {
-    index: u8,
-    attribute: Attribute,
-}
-impl Input {
-    fn new<T: ToByteVec>(index: u8, attribute: Attribute, AttributePointer { buffer, stride, offset, format }: AttributePointer<T>) -> Self {
-        buffer.bind();
-        // buffer bound & index checked: shouldn't ever fail
-        ox::vertex_attrib_pointer(index, format, stride, offset)
-            .expect("somehow: failed to create input");
-        Self { index, attribute }
-    }
-}
-
 pub struct VertexArray<T: ToByteVec> {
     inner: ox::VertexArray,
     max_inputs: u8,
-    inputs: Vec<Input>,
+    pub(crate) inputs: Vec<Input>,
     elements: Option<ElementBuffer<T>>,
 }
 impl<T: ToByteVec> VertexArray<T> {
