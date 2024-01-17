@@ -83,7 +83,15 @@ struct FragmentShader {
     source: CString,
 }
 
-pub use ox::ShaderProgram;
+/// Newtype allowing for deletion on drop
+pub struct Program(ox::ShaderProgram);
+
+impl Drop for Program {
+    fn drop(&mut self) {
+        ox::delete_program(self.0)
+            .expect("program only deleted on drop")
+    }
+}
 
 /// A representation of the shader pipeline as a whole, intended to be used as a builder, with the final stage ending in 'compile'
 #[derive(Debug)]
@@ -131,7 +139,7 @@ impl ShaderPipeline {
             ..self
         })
     }
-    pub fn compile(self) -> Result<ShaderProgram,OwlError> {
+    pub fn compile(self) -> Result<Program,OwlError> {
         // add inputs to vertex code
         let version_prelude = format!("#version {} core", self.version);
         let vertex_source = {
@@ -167,6 +175,6 @@ impl ShaderPipeline {
             .expect("shader is not deleted");
         ox::delete_shader(self.fragment.shader)
             .expect("shader is not deleted");
-        Ok(program)
+        Ok(Program(program))
     }
 }
