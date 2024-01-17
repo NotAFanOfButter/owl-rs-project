@@ -318,23 +318,29 @@ pub fn get_uint(parameter: UIntParameter) -> u32 {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ShaderError {
     CompilationFailed { info_log: String },
+    CreationFailed,
+    ProgramCreationFailed,
+    LinkingFailed { info_log: String },
 }
 impl std::fmt::Display for ShaderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ShaderError::CompilationFailed { info_log } => write!(f, "shader compilation failed\n{info_log}"),
+            ShaderError::CreationFailed => write!(f, "shader creation failed"),
+            ShaderError::ProgramCreationFailed => write!(f, "shader program creation failed"),
+            ShaderError::LinkingFailed { info_log } => write!(f, "shader program linking failed\n{info_log}"),
         }
     }
 }
 impl std::error::Error for ShaderError {}
 
 pub use safe_bindings::ShaderType;
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Shader(u32);
-pub fn create_shader(shader_type: ShaderType) -> Option<Shader> {
+pub fn create_shader(shader_type: ShaderType) -> Result<Shader,OxError> {
     match safe_bindings::CreateShader(shader_type) {
-        0 => None,
-        id => Some(Shader(id))
+        0 => Err(ShaderError::CreationFailed.into()),
+        id => Ok(Shader(id))
     }
 }
 /// # Errors
