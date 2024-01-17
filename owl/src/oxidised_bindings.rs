@@ -360,6 +360,7 @@ pub fn shader_source<CS>(shader: Shader, sources: &[CS]) -> Result<(),OxError>
 
 /// # Errors
 /// `GL_INVALID_VALUE`: shader has been deleted
+/// `CompilationFailed`
 pub fn compile_shader(shader: Shader) -> Result<(),OxError> {
     safe_bindings::CompileShader(shader.0);
     last_error_as_result()?;
@@ -428,10 +429,10 @@ pub fn get_shader_info_log(shader: Shader) -> Result<String, OxError> {
 //
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ShaderProgram(u32);
-pub fn create_program() -> Option<ShaderProgram> {
+pub fn create_program() -> Result<ShaderProgram, OxError> {
     match safe_bindings::CreateProgram() {
-        0 => None,
-        p => Some(ShaderProgram(p))
+        0 => Err(ShaderError::ProgramCreationFailed.into()),
+        p => Ok(ShaderProgram(p))
     }
 }
 /// # Errors:
