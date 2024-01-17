@@ -9,9 +9,9 @@ use raw_gl_context::{GlConfig,GlContext};
 use owl::prelude::*;
 
 fn main() -> Result<(), owl::OwlError> {
-    /*
-    Setup
-    */
+    //
+    // Setup
+    //
 
     let event_loop = EventLoop::new().expect("failed to create an event loop");
     event_loop.set_control_flow(ControlFlow::Poll);
@@ -28,15 +28,9 @@ fn main() -> Result<(), owl::OwlError> {
     }
     owl::load_proc(&context);
 
-    /*
-    Shader Pipeline
-    */
-
-    
-
-    /*
-    Vertices
-    */
+    //
+    // Vertices
+    //
 
     #[derive(ToByteVec)]
     struct Vertex(f32,f32,f32);
