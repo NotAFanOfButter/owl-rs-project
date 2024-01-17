@@ -42,13 +42,13 @@ impl<T: ToByteVec> ArrayBuffer<T> {
         let created = Self(Buffer::new());
         created.bind();
         ox::buffer_data(ox::BufferType::Array, data, usage)
-            .map_err(|e| e.with_message("failed to buffer data"))?;
+            .map_err(|e| e.with_message("creating ArrayBuffer, failed to buffer data"))?;
         Ok(created)
     }
     pub fn update(&mut self, data: Vec<T>, offset: usize) -> Result<(),OwlError> {
         self.bind();
         ox::buffer_subdata(ox::BufferType::Array, data, offset)
-            .map_err(|e| e.with_message("failed to replace existing data"))
+            .map_err(|e| e.with_message("updating ArrayBuffer, failed to replace existing data"))
     }
     // let's see if we can't limit the scope to crate.
     pub(crate) fn bind(&self) {
@@ -79,13 +79,13 @@ impl<T: ToByteVec> ElementBuffer<T> {
         let created = Self(Buffer::new());
         created.bind();
         ox::buffer_data(ox::BufferType::ElementArray, data, usage)
-            .map_err(|e| e.with_message("failed to buffer data"))?;
+            .map_err(|e| e.with_message("creating ElementBuffer, failed to buffer data"))?;
         Ok(created)
     }
     pub fn update(&mut self, data: Vec<T>, offset: usize) -> Result<(),OwlError> {
         self.bind();
         ox::buffer_subdata(ox::BufferType::ElementArray, data, offset)
-            .map_err(|e| e.with_message("failed to replace existing data"))
+            .map_err(|e| e.with_message("updating ElementBuffer, failed to replace existing data"))
     }
     /// let's see if we can't limit the scope to crate.
     pub(crate) fn bind(&self) {
