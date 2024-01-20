@@ -19,6 +19,8 @@ mod vertex_arrays;
 pub use vertex_arrays::*;
 mod shaders;
 pub use shaders::*;
+mod mesh;
+pub use mesh::*;
 
 pub mod prelude;
 

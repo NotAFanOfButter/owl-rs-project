@@ -44,7 +44,8 @@ fn main() -> Result<(), owl::OwlError> {
     let indices = vec![
         0, 1, 2,
     ];
-    let index_buffer = owl::ElementBuffer::new(indices, owl::BufferUsage::StaticDraw)?;
+    let index_buffer = owl::ElementBuffer::new(
+        indices, owl::BufferUsage::StaticDraw, owl::IndexType::UnsignedInt)?;
     let mut vertex_array_object = owl::VertexArray::new()
         .with_indices(index_buffer)
         .with_input(
@@ -76,7 +77,7 @@ fn main() -> Result<(), owl::OwlError> {
             .expect("no nul bytes")
         .compile()?;
     
-    let triangle = owl::Mesh { start: 0, count: 4 };
+    let triangle = owl::Mesh { start: 0, count: 4, vertex_array: &vertex_array_object };
 
     event_loop.run(|event, elwt| {
         match event {

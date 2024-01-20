@@ -86,6 +86,12 @@ struct FragmentShader {
 /// Newtype allowing for deletion on drop
 pub struct Program(ox::ShaderProgram);
 
+impl Program {
+    pub(crate) fn use_self(&self) -> Result<(),OwlError> {
+        ox::use_program(self.0).with_message("using program failed")
+    }
+}
+
 impl Drop for Program {
     fn drop(&mut self) {
         ox::delete_program(self.0)

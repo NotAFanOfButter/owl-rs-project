@@ -12,11 +12,11 @@ pub struct AttributePointer<'a, T: ToByteVec> {
     pub format: VertexFormat,
 }
 
-pub struct VertexArray<T: ToByteVec> {
+pub struct VertexArray<E: ToByteVec> {
     inner: ox::VertexArray,
     max_inputs: u8,
     pub(crate) inputs: Vec<Input>,
-    elements: Option<ElementBuffer<T>>,
+    pub(crate) elements: Option<ElementBuffer<E>>,
 }
 impl<T: ToByteVec> VertexArray<T> {
     // INVARIANT: will not be deleted until it is dropped
@@ -46,7 +46,7 @@ impl<T: ToByteVec> VertexArray<T> {
             Err(OwlError::custom("maximum inputs reached"))
         }
     }
-    fn bind(&self) {
+    pub(crate) fn bind(&self) {
         ox::bind_vertex_array(Some(self.inner))
             .expect("vertex array should not be deleted yet")
     }

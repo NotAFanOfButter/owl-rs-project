@@ -66,17 +66,24 @@ impl<T: ToByteVec> Drop for ArrayBuffer<T> {
     }
 }
 
+pub use ox::IndexType;
 /// A wrapper around [Buffer], that allows functions using it to specify the `ARRAY_BUFFER` target
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ElementBuffer<T: ToByteVec>(Buffer<T>);
+pub struct ElementBuffer<T: ToByteVec>{
+    inner: Buffer<T>,
+    pub(crate) inner_type: ox::IndexType
+}
 impl<T: ToByteVec> ElementBuffer<T> {
     // INVARIANT: buffer will not be deleted until it is dropped
     // fewer calls can fail, reducing error handling, but they now "expect"
     /// # Errors
     /// out of memory
-    pub fn new(data: Vec<T>, usage: BufferUsage) -> Result<Self, OwlError> 
+    pub fn new(data: Vec<T>, usage: BufferUsage, index_type: IndexType) -> Result<Self, OwlError> 
         where T: ToByteVec {
-        let created = Self(Buffer::new());
+        let created = Self {
+            inner: Buffer::new(),
+            inner_type: index_type
+        };
         created.bind();
         ox::buffer_data(ox::BufferType::ElementArray, data, usage)
             .map_err(|e| e.with_message("creating ElementBuffer, failed to buffer data"))?;
@@ -89,7 +96,7 @@ impl<T: ToByteVec> ElementBuffer<T> {
     }
     /// let's see if we can't limit the scope to crate.
     pub(crate) fn bind(&self) {
-        ox::bind_buffer(ox::BufferType::Array, Some(self.0.id))
+        ox::bind_buffer(ox::BufferType::Array, Some(self.inner.id))
             .expect("buffer should not be deleted yet")
     }
     pub(crate) fn unbind(&self) {
@@ -98,6 +105,6 @@ impl<T: ToByteVec> ElementBuffer<T> {
 }
 impl<T: ToByteVec> Drop for ElementBuffer<T> {
     fn drop(&mut self) {
-        ox::delete_buffer(self.0.id)
+        ox::delete_buffer(self.inner.id)
     }
 }
