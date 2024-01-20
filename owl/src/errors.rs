@@ -8,6 +8,9 @@ impl OwlError {
     pub(crate) fn custom(message: &str) -> Self {
         OwlError { info: message.to_owned(), internal: None }
     }
+    pub(crate) fn with_context(self, context: &str) -> Self {
+        OwlError { info: format!("{context}, {}", self.info), ..self }
+    }
 }
 
 impl std::fmt::Display for OwlError {
