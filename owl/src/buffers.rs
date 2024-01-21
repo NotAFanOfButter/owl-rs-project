@@ -96,11 +96,11 @@ impl<T: ToByteVec> ElementBuffer<T> {
     }
     /// let's see if we can't limit the scope to crate.
     pub(crate) fn bind(&self) {
-        ox::bind_buffer(ox::BufferType::Array, Some(self.inner.id))
+        ox::bind_buffer(ox::BufferType::ElementArray, Some(self.inner.id))
             .expect("buffer should not be deleted yet")
     }
     pub(crate) fn unbind(&self) {
-        ox::bind_buffer(ox::BufferType::Array, None).expect("binding 0 always succeeds")
+        ox::bind_buffer(ox::BufferType::ElementArray, None).expect("binding 0 always succeeds")
     }
 }
 impl<T: ToByteVec> Drop for ElementBuffer<T> {
