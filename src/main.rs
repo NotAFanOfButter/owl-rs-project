@@ -8,24 +8,28 @@ use raw_gl_context::{GlConfig,GlContext};
 
 use owl::prelude::*;
 
-fn main() -> Result<(), owl::OwlError> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     //
     // Setup
     //
 
-    let event_loop = EventLoop::new().expect("failed to create an event loop");
+    let event_loop = EventLoop::new()?;
     event_loop.set_control_flow(ControlFlow::Poll);
     let window = WindowBuilder::new()
         .with_inner_size(LogicalSize::new(800,600))
-        .with_title("Opengl Square")
+        .with_title("Opengl Triangle")
         .with_enabled_buttons(WindowButtons::CLOSE)
         .build(&event_loop).expect("failed to create a window");
-    let context = unsafe { GlContext::create(&window,
-        GlConfig { version: (4,3), ..Default::default() })
-        .expect("failed to create an OpenGL context") };
-    unsafe {
-        context.make_current();
-    }
+    // SAFETY: idk really, but calls into native windowing c libs
+    //          & author appears to have done 0 safety checks
+    let context = unsafe {
+        GlContext::create(&window,
+            GlConfig { version: (4,3), ..Default::default() })
+        .expect("failed to create an OpenGL context")
+    };
+    // SAFETY: idk really, but calls into native windowing c libs
+    //          & author appears to have done 0 safety checks
+    unsafe { context.make_current() };
     owl::load_proc(&context);
 
     //
