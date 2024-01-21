@@ -87,7 +87,7 @@ pub fn bind_buffer(target: BufferType, buffer: Option<Buffer>) -> Result<(),OxEr
 pub use safe_bindings::BufferUsage;
 use crate::traits::ToByteVec;
 /// # Errors
-/// `GL_INVALID_OPERATON`: `GL_BUFFER_IMMUTABLE_STORAGE` flag of target set to `GL_TRUE`
+/// `GL_INVALID_OPERATON`: `GL_BUFFER_IMMUTABLE_STORAGE` flag of target set to `GL_TRUE`, no buffer bound
 /// `GL_OUT_OF_MEMORY`
 pub fn buffer_data<T>(target: BufferType, data: Vec<T>, usage: BufferUsage) -> Result<(),OxError> 
     where T: ToByteVec {
