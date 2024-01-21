@@ -38,9 +38,11 @@ impl<T: ToByteVec> VertexArray<T> {
     pub fn with_input<U: ToByteVec>(mut self, attribute: Attribute, pointer: AttributePointer<U>) -> Result<Self,OwlError> {
         // max inputs should never be allowed to be >= 256
         let next_index = self.inputs.len() as u8;
-        if next_index > self.max_inputs {
+        if next_index < self.max_inputs {
             self.bind();
             self.inputs.push(Input::new(next_index, attribute, pointer));
+            ox::enable_vertex_attrib_array(next_index)
+                .expect("vertex array bound, and next_index <= max_indices");
             Ok(self)
         } else {
             Err(OwlError::custom("maximum inputs reached"))
