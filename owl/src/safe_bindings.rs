@@ -126,9 +126,10 @@ pub enum BufferUsage {
 ///
 /// # User Invariants
 /// `GL_BUFFER_IMMUTABLE_STORAGE` flag of target must be `GL_FALSE`,
+/// A buffer must be bound
 ///
 /// # Errors
-/// `GL_INVALID_OPERATON`: `GL_BUFFER_IMMUTABLE_STORAGE` flag of target set to `GL_TRUE`
+/// `GL_INVALID_OPERATON`: `GL_BUFFER_IMMUTABLE_STORAGE` flag of target set to `GL_TRUE`, no buffer bound
 /// `GL_OUT_OF_MEMORY`
 pub fn BufferData<T>(target: BufferType, data: &[T], usage: BufferUsage) {
     unsafe {
