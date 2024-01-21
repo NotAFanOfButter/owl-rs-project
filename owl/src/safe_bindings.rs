@@ -240,6 +240,7 @@ pub fn VertexAttribPointer(index: u8, size: AttribSize, data_type: DataType, nor
 pub enum Parameter {
     MaxVertexAttribs,
     ArrayBufferBinding,
+    ElementBufferBinding,
     MaxComputeShaderStorageBlocks,
 }
 /// # GL Invariants
@@ -650,6 +651,7 @@ impl From<Parameter> for gl::types::GLenum {
         match val {
             Parameter::MaxVertexAttribs => gl::MAX_VERTEX_ATTRIBS,
             Parameter::ArrayBufferBinding => gl::ARRAY_BUFFER_BINDING,
+            Parameter::ElementBufferBinding => gl::ELEMENT_ARRAY_BUFFER_BINDING,
             Parameter::MaxComputeShaderStorageBlocks => gl::MAX_COMPUTE_SHADER_STORAGE_BLOCKS,
         }
     }

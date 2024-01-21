@@ -295,6 +295,7 @@ pub use safe_bindings::Parameter as ParameterQuery;
 pub enum UIntParameter {
     MaxVertexAttribs,
     ArrayBufferBinding,
+    ElementBufferBinding,
     MaxComputeShaderStorageBlocks,
 }
 pub fn get_uint(parameter: UIntParameter) -> u32 {
@@ -302,6 +303,7 @@ pub fn get_uint(parameter: UIntParameter) -> u32 {
     let parameter = match parameter {
         UIntParameter::MaxVertexAttribs => safe_bindings::Parameter::MaxVertexAttribs,
         UIntParameter::ArrayBufferBinding => safe_bindings::Parameter::ArrayBufferBinding,
+        UIntParameter::ElementBufferBinding => safe_bindings::Parameter::ElementBufferBinding,
         UIntParameter::MaxComputeShaderStorageBlocks => safe_bindings::Parameter::MaxComputeShaderStorageBlocks,
     };
     unsafe {
