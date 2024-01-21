@@ -8,7 +8,7 @@ pub struct Mesh<'a,E: ToByteVec> {
 
 pub use ox::DrawMode;
 impl<'a, E: ToByteVec> Mesh<'a, E> {
-    pub fn draw(&self, mode: DrawMode, shader_program: Program) -> Result<(),OwlError> {
+    pub fn draw(&self, mode: DrawMode, shader_program: &Program) -> Result<(),OwlError> {
         shader_program.use_self().map_err(|e| e.with_context("drawing mesh"))?;
         self.vertex_array.bind();
         match self.vertex_array.elements {
