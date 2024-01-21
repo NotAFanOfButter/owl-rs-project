@@ -21,6 +21,8 @@ mod shaders;
 pub use shaders::*;
 mod mesh;
 pub use mesh::*;
+pub mod screen;
+pub use screen::Colour;
 
 pub mod prelude;
 
