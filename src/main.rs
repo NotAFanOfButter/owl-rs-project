@@ -42,15 +42,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Vertex(-0.5, 0.5, 0.0),
         Vertex(-0.5, -0.5, 0.0),
         Vertex(0.5, 0.5, 0.0),
-        Vertex(0.5, -0.5, 0.0),
     ];
     let vertex_buffer = owl::ArrayBuffer::new(vertices, owl::BufferUsage::StaticDraw)?;
-    let indices = vec![
-        0, 1, 2,
-    ];
     let index_buffer = owl::ElementBuffer::new(
-        indices, owl::BufferUsage::StaticDraw, owl::IndexType::UnsignedInt)?;
-    let mut vertex_array_object = owl::VertexArray::new()
+        vec![0,1,2], owl::BufferUsage::StaticDraw, owl::IndexType::UnsignedInt)?;
+    let vertex_array_object = owl::VertexArray::new()
         .with_indices(index_buffer)
         .with_input(
             owl::Attribute { name: "pos".to_owned(), glsl_type: owl::AttributeType::Vec3 },
