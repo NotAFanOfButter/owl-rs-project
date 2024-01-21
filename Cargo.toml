@@ -5,13 +5,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lints.rust]
-unsafe = "deny"
 [lints.clippy]
 pedantic = "warn"
 nursery = "warn"
 unwrap_used = "deny"
-allow-one-hash-in-raw-strings = "allow"
+undocumented_unsafe_blocks = "deny"
 
 [dependencies]
 raw-gl-context = { git = "https://github.com/glowcoil/raw-gl-context.git" }
