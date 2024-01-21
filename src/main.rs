@@ -63,37 +63,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //
     let shader_program = owl::ShaderPipeline::new(430)?
         .inputs_from_vertex_array(&vertex_array_object)
-        .vertex_body(r#"
+        .vertex_body(r"
             void main() {
                 gl_Position = vec4(pos, 1.0);
             }
-            "#).expect("no nul bytes")
-        .fragment_body(r#"
+            ").expect("no nul bytes")
+        .fragment_body(r"
             void main() {
                 colour = vec4(0.0, 0.5, 0.5, 1.0);
             }
-            "#,
+            ",
             owl::Attribute { name: "colour".to_string(), glsl_type: owl::AttributeType::Vec4 })
             .expect("no nul bytes")
         .compile()?;
     
-    let triangle = owl::Mesh { start: 0, count: 4, vertex_array: &vertex_array_object };
+    let triangle = owl::Mesh { start: 0, count: 3, vertex_array: &vertex_array_object };
 
     event_loop.run(|event, elwt| {
-        match event {
-            Event::WindowEvent {event, ..} => {
-                match event {
-                    WindowEvent::CloseRequested => elwt.exit(),
-                    WindowEvent::RedrawRequested => {
-                        owl::colour_clear(owl::Colour(0.1, 0.1, 0.1, 1.0));
-                        triangle.draw_triangles(&vertex_array_object, &shader_program);
-                        context.swap_buffers();
-                    },
-                    _ => ()
-                }
+        if let Event::WindowEvent {event, ..} = event {
+            match event {
+                WindowEvent::CloseRequested => elwt.exit(),
+                WindowEvent::RedrawRequested => {
+                    owl::screen::clear_colour(owl::Colour::rgb(100, 10, 100));
+                    if triangle.draw(owl::DrawMode::Triangles, &shader_program).is_err() {
+                        //log error
+                    }
+                    context.swap_buffers();
+                },
+                _ => ()
             }
-            _ => ()
         }
-    }).expect("Failed to run an event loop");
+    })?;
     Ok(())
 }
