@@ -147,7 +147,7 @@ impl ShaderPipeline {
     }
     pub fn compile(self) -> Result<Program,OwlError> {
         // add inputs to vertex code
-        let version_prelude = format!("#version {} core", self.version);
+        let version_prelude = format!("#version {} core\n", self.version);
         let vertex_source = {
             let input_to_glsl = |i: &Input| {
                 format!("layout (location = {}) in {} {};\n", i.index, i.attribute.glsl_type, i.attribute.name)
