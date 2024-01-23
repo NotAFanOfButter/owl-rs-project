@@ -216,6 +216,7 @@ pub struct ShaderPipeline {
     vertex: VertexShader,
     fragment: FragmentShader,
     inputs: Vec<Input>,
+    pipes: Vec<Pipe>,
     output: Attribute
 }
 
@@ -233,7 +234,8 @@ impl ShaderPipeline {
             vertex: VertexShader { shader: vertex, source: CString::default() },
             fragment: FragmentShader { shader: fragment, source: CString::default() },
             inputs: Vec::new(),
-            output: Attribute { name: String::default(), glsl_type: AttributeType::Vec4 }
+            output: Attribute { name: String::default(), glsl_type: AttributeType::Vec4 },
+            pipes: Vec::new(),
         })
     }
     pub fn inputs_from_vertex_array<T: ToByteVec>(self, vertex_array: &VertexArray<T>) -> Self {
@@ -255,6 +257,10 @@ impl ShaderPipeline {
             ..self
         })
     }
+    pub fn pipe(mut self, pipe: Pipe) -> Self {
+        self.pipes.push(pipe);
+        self
+    }
     pub fn compile(self) -> Result<Program,OwlError> {
         // add inputs to vertex code
         let version_prelude = format!("#version {} core\n", self.version);
@@ -264,16 +270,33 @@ impl ShaderPipeline {
             };
             let ins_prelude: String = self.inputs.iter().map(input_to_glsl).collect();
             let body = self.vertex.source.into_string().expect("created from &str, so valid UTF-8");
-            CString::new(version_prelude.clone() + &ins_prelude + &body)
+            let pipes_prelude: String = self.pipes.iter()
+                .filter_map(|Pipe { targets, attribute }| {
+                    match targets {
+                        PipeTargets::VertexFragment => Some(
+                            format!("out {} {};\n", attribute.glsl_type, attribute.name)
+                        )
+                    }
+            }).collect();
+            CString::new(version_prelude.clone() + &ins_prelude + &pipes_prelude + &body)
                 .expect("created from a collection of valid UTF-8 strings, so must be valid")
         };
+        // println!("{}", vertex_source.clone().into_string().unwrap());
         let fragment_source = {
-            // reserving space for implementing pipes in future
+            let pipes_prelude: String = self.pipes.iter()
+                .filter_map(|Pipe { targets, attribute }| {
+                    match targets {
+                        PipeTargets::VertexFragment => Some(
+                            format!("in {} {};\n", attribute.glsl_type, attribute.name)
+                        )
+                    }
+            }).collect();
             let out_prelude = format!("out {} {};\n", self.output.glsl_type, self.output.name);
             let body = self.fragment.source.into_string().expect("created from &str, so valid UTF-8");
-            CString::new(version_prelude + &out_prelude + &body)
+            CString::new(version_prelude + &pipes_prelude + &out_prelude + &body)
                 .expect("created from a collection of valid UTF-8 strings, so must be valid")
         };
+        // println!("{}", fragment_source.clone().into_string().unwrap());
         // compile shaders
         ox::shader_source(self.vertex.shader, &[vertex_source]).and(
             ox::shader_source(self.fragment.shader, &[fragment_source]))
