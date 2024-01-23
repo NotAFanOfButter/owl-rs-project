@@ -36,12 +36,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Vertices
     //
 
-    #[derive(ToByteVec)]
-    struct Vertex(f32,f32,f32);
+    #[derive(ToByteVec, Clone)]
+    struct Vertex {
+        pos: [f32;2],
+        colour: [u8;3],
+    }
+    let test_vertex = Vertex {pos: [0.0;2], colour: [0;3]};
     let vertices = vec![
-        Vertex(-0.5, 0.5, 0.0),
-        Vertex(-0.5, -0.5, 0.0),
-        Vertex(0.5, 0.5, 0.0),
+        Vertex { pos: [0.5, -0.5], colour: [0,0,200] },
+        Vertex { pos: [-0.5, -0.5], colour: [0,200,0] },
+        Vertex { pos: [0.0, 0.5], colour: [200,0,0] },
     ];
     let vertex_buffer = owl::ArrayBuffer::new(vertices, owl::BufferUsage::StaticDraw)?;
     let index_buffer = owl::ElementBuffer::new(
@@ -49,13 +53,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vertex_array_object = owl::VertexArray::new()
         .with_indices(index_buffer)
         .with_input(
-            owl::Attribute { name: "pos".to_owned(), glsl_type: owl::AttributeType::Vec3 },
-            owl::AttributePointer { 
+            owl::InputAttribute::Float {
+                name: "pos".to_owned(), glsl_type: owl::FloatAttributeType::Vec2,
+                data_format: owl::FloatVertexFormat::Size2 { normalise: false, data_type: owl::DataTypeUnsized::Float }
+            },
+            owl::AttributePointer {
                 buffer: &vertex_buffer,
-                stride: 3 * std::mem::size_of::<f32>(),
-                offset: 0,
-                format: owl::VertexFormat::Size3 { normalised: false, data_type: owl::DataTypeSize3::Float }
+                stride: test_vertex.stride(),
+                offset: test_vertex.field_offset(0).expect("has at least 1 field")
             }
+        )?
+        .with_input(
+            owl::InputAttribute::Integral {
+                name: "colour".to_owned(), glsl_type: owl::IntegralAttributeType::UVec3,
+                data_format: owl::IntegralVertexFormat::Size3(owl::IntegralDataType::UnsignedByte)
+            },
+            owl::AttributePointer {
+                buffer: &vertex_buffer,
+                stride: test_vertex.stride(),
+                offset: test_vertex.field_offset(1).expect("has at least 2 fields") }
         )?;
 
     //
@@ -63,14 +79,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //
     let shader_program = owl::ShaderPipeline::new(430)?
         .inputs_from_vertex_array(&vertex_array_object)
+        .pipe(owl::Pipe {
+            targets: owl::PipeTargets::VertexFragment,
+            attribute: owl::Attribute { name: "vertColour".to_owned(), glsl_type: owl::AttributeType::Vec3 }
+            })
+        // TODO: from file
         .vertex_body(r"
             void main() {
-                gl_Position = vec4(pos, 1.0);
+                vertColour = vec3(colour) / 255.0;
+                gl_Position = vec4(pos, 0.0, 1.0);
             }
             ").expect("no nul bytes")
         .fragment_body(r"
             void main() {
-                colour = vec4(0.0, 0.5, 0.5, 1.0);
+                colour = vec4(vertColour, 1.0);
             }
             ",
             owl::Attribute { name: "colour".to_string(), glsl_type: owl::AttributeType::Vec4 })
@@ -84,9 +106,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match event {
                 WindowEvent::CloseRequested => elwt.exit(),
                 WindowEvent::RedrawRequested => {
-                    owl::screen::clear_colour(owl::Colour::rgb(100, 10, 100));
-                    if triangle.draw(owl::DrawMode::Triangles, &shader_program).is_err() {
-                        //log error
+                    owl::screen::clear_colour(owl::Colour::greyscale_float(0.5));
+                    if let Err(e) = triangle.draw(owl::DrawMode::Triangles, &shader_program) {
+                        eprintln!("{e}");
                     }
                     context.swap_buffers();
                 },
