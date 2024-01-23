@@ -14,6 +14,7 @@ use bitflags::bitflags;
 
 /// # Notes
 /// values clamped to [0,1]
+#[inline]
 pub fn ClearColour(red: f32, green: f32, blue: f32, alpha: f32) {
     unsafe {
         gl::ClearColor(red, green, blue, alpha)
@@ -47,6 +48,7 @@ impl From<ClearFlags> for gl::types::GLbitfield {
 
 /// # GL Invariants
 /// flag: only 3 buffer bits can be set
+#[inline]
 pub fn Clear(flags: ClearFlags) {
     unsafe {
         gl::Clear(flags.into())
@@ -55,6 +57,7 @@ pub fn Clear(flags: ClearFlags) {
 
 /// # GL Invariants
 /// length of buffers >= 0
+#[inline]
 pub fn GenBuffers(buffers: &mut [u32]) {
     unsafe {
         // n: >= 0
@@ -62,18 +65,21 @@ pub fn GenBuffers(buffers: &mut [u32]) {
     }
 }
 /// Ease of use for GenBuffers
+#[inline]
 pub fn GenBuffer(buffer: &mut u32) {
     GenBuffers(std::slice::from_mut(buffer));
 }
 
 /// # GL Invariants
 /// length of buffers >= 0
+#[inline]
 pub fn DeleteBuffers(buffers: &[u32]) {
     unsafe {
         // n: >= 0
         gl::DeleteBuffers(buffers.len() as i32, buffers.as_ptr())
     }
 }
+#[inline]
 pub fn DeleteBuffer(buffer: u32) {
     DeleteBuffers(&[buffer])
 }
@@ -86,6 +92,7 @@ pub fn DeleteBuffer(buffer: u32) {
 ///
 /// # Errors
 /// `GL_INVALID_VALUE`: buffer was not returned by `glGenBuffers`, 0, or was deleted
+#[inline]
 pub fn BindBuffer(target: BufferType, buffer: u32) {
     unsafe { gl::BindBuffer(target.into(), buffer) }
 }
@@ -131,6 +138,7 @@ pub enum BufferUsage {
 /// # Errors
 /// `GL_INVALID_OPERATON`: `GL_BUFFER_IMMUTABLE_STORAGE` flag of target set to `GL_TRUE`, no buffer bound
 /// `GL_OUT_OF_MEMORY`
+#[inline]
 pub fn BufferData<T>(target: BufferType, data: &[T], usage: BufferUsage) {
     unsafe {
         gl::BufferData(target.into(), std::mem::size_of_val(data) as isize, data.as_ptr().cast(), usage.into())
@@ -152,6 +160,7 @@ pub fn BufferData<T>(target: BufferType, data: &[T], usage: BufferUsage) {
 /// # Errors
 /// `GL_INVALID_OPERATON`: zero is bound to target, target is being mapped
 /// `GL_INVALID_VALUE`: offset + size > buffer size
+#[inline]
 pub fn BufferSubData<T>(target: BufferType, data: &[T], offset: usize) {
     unsafe {
         gl::BufferSubData(target.into(), offset as isize, std::mem::size_of_val(data) as isize, data.as_ptr().cast())
@@ -160,6 +169,7 @@ pub fn BufferSubData<T>(target: BufferType, data: &[T], offset: usize) {
 
 /// # GL Invariants
 /// length of vertex_arrays >= 0
+#[inline]
 pub fn GenVertexArrays(vertex_arrays: &mut [u32]) {
     unsafe {
         // n >= 0
@@ -167,17 +177,20 @@ pub fn GenVertexArrays(vertex_arrays: &mut [u32]) {
     }
 }
 /// Ease of use for GenVertexArrays
+#[inline]
 pub fn GenVertexArray(vertex_array: &mut u32) {
     GenVertexArrays(std::slice::from_mut(vertex_array));
 }
 /// # GL Invariants
 /// length of vertex_arrays >= 0
+#[inline]
 pub fn DeleteVertexArrays(vertex_arrays: &[u32]) {
     unsafe {
         // n: >= 0
         gl::DeleteVertexArrays(vertex_arrays.len() as i32, vertex_arrays.as_ptr())
     }
 }
+#[inline]
 pub fn DeleteVertexArray(vertex_array: u32) {
     DeleteVertexArrays(&[vertex_array])
 }
@@ -187,6 +200,7 @@ pub fn DeleteVertexArray(vertex_array: u32) {
 ///
 /// # Errors
 /// `GL_INVALID_VALUE`: vertex_array was not returned by `glGenVertexArrays`, 0 or was deleted
+#[inline]
 pub fn BindVertexArray(vertex_array: u32) {
     unsafe { gl::BindVertexArray(vertex_array) }
 }
@@ -198,6 +212,7 @@ pub fn BindVertexArray(vertex_array: u32) {
 /// # Errors
 /// `GL_INVALID_OPERATON`: no vertex array object is bound
 /// `GL_INVALID_VALUE`: attribute_index >= `GL_MAX_VERTEX_ATTRIBS`
+#[inline]
 pub fn EnableVertexAttribArray(attribute_index: u8) {
     unsafe {
         gl::EnableVertexAttribArray(attribute_index as u32)
@@ -235,6 +250,7 @@ pub enum IntegralAttribSize {
 /// # Errors
 /// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
 /// `GL_INVALID_OPERATON`: any of the other user invariants are violated
+#[inline]
 pub fn VertexAttribPointer(index: u8, size: AttribSize, data_type: DataType, normalised: bool, stride: usize, offset: usize) {
     unsafe {
         gl::VertexAttribPointer(index as u32, size.into(), data_type.into(), normalised.into(),
@@ -253,6 +269,7 @@ pub fn VertexAttribPointer(index: u8, size: AttribSize, data_type: DataType, nor
 /// # Errors
 /// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
 /// `GL_INVALID_OPERATON`: any of the other user invariants are violated
+#[inline]
 pub fn VertexAttribIPointer(index: u8, size: IntegralAttribSize, data_type: IntegralDataType, stride: usize, offset: usize) {
     unsafe {
         gl::VertexAttribIPointer(index as u32, size.into(), data_type.into(),
@@ -293,6 +310,7 @@ pub enum ShaderType {
 ///
 /// # Notes
 /// returns 0 if the process fails
+#[inline]
 pub fn CreateShader(shader_type: ShaderType) -> u32 {
     unsafe {
         gl::CreateShader(shader_type.into())
@@ -304,6 +322,7 @@ pub fn CreateShader(shader_type: ShaderType) -> u32 {
 ///
 /// # Errors
 /// `GL_INVALID_VALUE`: shader is not a value generated by OpenGL, 0 or was deleted
+#[inline]
 pub fn DeleteShader(shader: u32) {
     unsafe {
         gl::DeleteShader(shader)
@@ -319,6 +338,7 @@ pub fn DeleteShader(shader: u32) {
 /// # Errors
 /// `GL_INVALID_VALUE`: shader is not a value generated by OpenGL, 0, or was deleted
 /// `GL_INVALID_OPERATON`: shader is not a valid shader object
+#[inline]
 pub fn ShaderSource<CS>(shader: u32, sources: &[CS]) 
     where CS: AsRef<std::ffi::CStr> {
     let sources: Vec<_> = sources.iter().map(|cs| cs.as_ref().as_ptr()).collect();
@@ -336,6 +356,7 @@ pub fn ShaderSource<CS>(shader: u32, sources: &[CS])
 ///
 /// # Notes
 /// success or failure stored in `GL_COMPILE_STATUS` flag, accessed through `glGetShaderiv`
+#[inline]
 pub fn CompileShader(shader: u32) {
     unsafe {
         gl::CompileShader(shader);
@@ -350,6 +371,7 @@ pub fn CompileShader(shader: u32) {
 /// `GL_INVALID_VALUE`: program, shader not values generated by OpenGL or deleted
 /// `GL_INVALID_OPERATON`: program, shader not valid program, shader objects respectively
 /// `GL_INVALID_OPERATON`: shader already attached to program
+#[inline]
 pub fn AttachShader(program: u32, shader: u32) {
     unsafe {
         gl::AttachShader(program, shader)
@@ -364,6 +386,7 @@ pub fn AttachShader(program: u32, shader: u32) {
 /// `GL_INVALID_VALUE`: program, shader not values generated by OpenGL or deleted
 /// `GL_INVALID_OPERATON`: program, shader not valid program, shader objects respectively
 /// `GL_INVALID_OPERATON`: shader is not attached to program
+#[inline]
 pub fn DetachShader(program: u32, shader: u32) {
     unsafe {
         gl::DetachShader(program, shader)
@@ -387,6 +410,7 @@ pub enum ShaderParameter {
 /// # Errors
 /// `GL_INVALID_VALUE`: shader is not a value generated by OpenGL
 /// `GL_INVALID_OPERATON`: shader is not a valid shader object
+#[inline]
 pub fn GetShaderiv(shader: u32, parameter: ShaderParameter, data: &mut i32) {
     unsafe {
         // SAFETY: always returns a single value ==> ptr never out of bounds
@@ -411,6 +435,7 @@ pub use gl::FALSE as glFalse;
 ///
 /// # Notes
 /// length: None (~NULL) specifies that no length should be returned
+#[inline]
 pub fn GetShaderInfoLog(shader: u32, buffer: &mut [std::ffi::c_char], length: Option<&mut i32>) {
     unsafe {
         gl::GetShaderInfoLog(shader, buffer.len() as i32,
@@ -421,6 +446,7 @@ pub fn GetShaderInfoLog(shader: u32, buffer: &mut [std::ffi::c_char], length: Op
 
 /// # Notes
 /// returns 0 if the process fails
+#[inline]
 pub fn CreateProgram() -> u32 {
     unsafe {
         gl::CreateProgram()
@@ -435,6 +461,7 @@ pub fn CreateProgram() -> u32 {
 /// `GL_INVALID_OPERATON`: program is not a program object
 /// `GL_INVALID_OPERATON`: program is the currently active program object, and transform feedback
 ///                         mode is active
+#[inline]
 pub fn LinkProgram(program: u32) {
     unsafe {
         gl::LinkProgram(program)    
@@ -471,6 +498,7 @@ pub enum ProgramParameter {
 /// `GL_INVALID_OPERATON`: program is not a valid shader object, or
 ///                        parameter is GeometryVerticesOut, GeometryInputType,
 ///                            GeometryOutputType without a geometry shader
+#[inline]
 pub fn GetProgramiv(program: u32, parameter: ProgramParameter, data: &mut i32) {
     unsafe {
         // SAFETY: always returns a single value ==> ptr never out of bounds
@@ -490,6 +518,7 @@ pub fn GetProgramiv(program: u32, parameter: ProgramParameter, data: &mut i32) {
 ///
 /// # Notes
 /// length: None (~NULL) specifies that no length should be returned
+#[inline]
 pub fn GetProgramInfoLog(program: u32, buffer: &mut [std::ffi::c_char], length: Option<&mut i32>) {
     unsafe {
         gl::GetProgramInfoLog(program, buffer.len() as i32,
@@ -505,6 +534,7 @@ pub fn GetProgramInfoLog(program: u32, buffer: &mut [std::ffi::c_char], length: 
 /// `GL_INVALID_VALUE`: program is not a value generated by OpenGL or 0
 /// `GL_INVALID_OPERATON`: program is not a valid program object
 /// `GL_INVALID_OPERATON`: transform feedback mode is active
+#[inline]
 pub fn UseProgram(program: u32) {
     unsafe {
         gl::UseProgram(program)
@@ -516,6 +546,7 @@ pub fn UseProgram(program: u32) {
 ///
 /// # Errors
 /// `GL_INVALID_VALUE`: program is not a value generated by OpenGL, or was deleted
+#[inline]
 pub fn DeleteProgram(program: u32) {
     unsafe {
         gl::DeleteProgram(program)
@@ -556,6 +587,7 @@ pub enum IndexType {
 ///                         of the geometry shader in the currently installed program object.
 /// `GL_INVALID_OPERATON`: non-zero buffer object name is bound to an enabled array or the element array
 ///                         and the buffer object's data store is currently mapped
+#[inline]
 pub fn DrawElements(mode: DrawMode, count: usize, index_type: IndexType, offset: usize) {
     unsafe {
         gl::DrawElements(mode.into(), count as i32, index_type.into(), offset as *const _)
@@ -575,6 +607,7 @@ pub fn DrawElements(mode: DrawMode, count: usize, index_type: IndexType, offset:
 ///                         of the geometry shader in the currently installed program object.
 /// `GL_INVALID_OPERATON`: non-zero buffer object name is bound to an enabled array or the element array
 ///                         and the buffer object's data store is currently mapped
+#[inline]
 pub fn DrawArrays(mode: DrawMode, first: usize, count: usize) {
     unsafe {
         gl::DrawArrays(mode.into(), first as i32, count as i32)
@@ -619,6 +652,7 @@ pub enum Error {
     StackUnderflow,
     StackOverflow
 }
+#[inline]
 pub fn GetError() -> Option<Error> {
     let e = unsafe { gl::GetError() };
     if e == 0 {
