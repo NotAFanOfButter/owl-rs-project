@@ -1,15 +1,15 @@
 use crate::prelude::*;
-use crate::{ArrayBuffer,Attribute,ElementBuffer,Input,OwlError};
+use crate::{ArrayBuffer,InputAttribute,ElementBuffer,Input,OwlError};
 use crate::oxidised_bindings as ox;
 
-pub use ox::{ VertexFormat, DataTypeSize3, DataTypeSize4, DataTypeSizeBgra, DataTypeUnsized };
+pub use ox::{ FloatVertexFormat, IntegralVertexFormat, IntegralDataType, DataTypeSize3, DataTypeSize4, DataTypeSizeBgra, DataTypeUnsized };
 
-type Bytes = usize;
+pub use crate::traits::Bytes;
+
 pub struct AttributePointer<'a, T: ToByteVec> {
     pub buffer: &'a ArrayBuffer<T>,
     pub stride: Bytes,
     pub offset: Bytes,
-    pub format: VertexFormat,
 }
 
 pub struct VertexArray<E: ToByteVec> {
@@ -35,7 +35,7 @@ impl<T: ToByteVec> VertexArray<T> {
         self.elements = Some(buffer);
         self
     }
-    pub fn with_input<U: ToByteVec>(mut self, attribute: Attribute, pointer: AttributePointer<U>) -> Result<Self,OwlError> {
+    pub fn with_input<U: ToByteVec>(mut self, attribute: InputAttribute, pointer: AttributePointer<U>) -> Result<Self,OwlError> {
         // max inputs should never be allowed to be >= 256
         let next_index = self.inputs.len() as u8;
         if next_index < self.max_inputs {

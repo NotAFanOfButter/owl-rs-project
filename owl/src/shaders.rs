@@ -1,7 +1,7 @@
 use std::ffi::CString;
 
+use crate::{IntegralVertexFormat, FloatVertexFormat, AttributePointer, OwlError, VertexArray};
 use crate::prelude::*;
-use crate::{AttributePointer, OwlError, VertexArray};
 use crate::ox;
 
 /// Corresponds to a glsl type
@@ -19,6 +19,9 @@ pub enum AttributeType {
     IVec2,
     IVec3,
     IVec4,
+    UVec2,
+    UVec3,
+    UVec4,
     Mat2,
     Mat3,
     Mat4
@@ -38,11 +41,72 @@ impl std::fmt::Display for AttributeType {
             AttributeType::IVec2 => "ivec2",
             AttributeType::IVec3 => "ivec3",
             AttributeType::IVec4 => "ivec4",
+            AttributeType::UVec2 => "uvec2",
+            AttributeType::UVec3 => "uvec3",
+            AttributeType::UVec4 => "uvec4",
             AttributeType::Mat2 => "mat2",
             AttributeType::Mat3 => "mat3",
             AttributeType::Mat4 => "mat4",
         };    
         write!(f, "{s}")
+    }
+}
+
+/// Corresponds to a floating point (at least natively) glsl type
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum FloatAttributeType {
+    Bool,
+    Float,
+    Vec2,
+    Vec3,
+    Vec4,
+    BVec2,
+    BVec3,
+    BVec4,
+    Mat2,
+    Mat3,
+    Mat4
+}
+impl From<FloatAttributeType> for AttributeType {
+    fn from(value: FloatAttributeType) -> Self {
+        match value {
+            FloatAttributeType::Bool => AttributeType::Bool,
+            FloatAttributeType::Float => AttributeType::Float,
+            FloatAttributeType::Vec2 => AttributeType::Vec2,
+            FloatAttributeType::Vec3 => AttributeType::Vec3,
+            FloatAttributeType::Vec4 => AttributeType::Vec4,
+            FloatAttributeType::BVec2 => AttributeType::BVec2,
+            FloatAttributeType::BVec3 => AttributeType::BVec3,
+            FloatAttributeType::BVec4 => AttributeType::BVec4,
+            FloatAttributeType::Mat2 => AttributeType::Mat2,
+            FloatAttributeType::Mat3 => AttributeType::Mat3,
+            FloatAttributeType::Mat4 => AttributeType::Mat4,
+        }
+    }
+}
+
+/// Corresponds to an integral glsl type
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum IntegralAttributeType {
+    Int,
+    IVec2,
+    IVec3,
+    IVec4,
+    UVec2,
+    UVec3,
+    UVec4,
+}
+impl From<IntegralAttributeType> for AttributeType {
+    fn from(value: IntegralAttributeType) -> Self {
+        match value {
+            IntegralAttributeType::Int => AttributeType::Int,
+            IntegralAttributeType::IVec2 => AttributeType::IVec2,
+            IntegralAttributeType::IVec3 => AttributeType::IVec3,
+            IntegralAttributeType::IVec4 => AttributeType::IVec4,
+            IntegralAttributeType::UVec2 => AttributeType::UVec2,
+            IntegralAttributeType::UVec3 => AttributeType::UVec3 ,
+            IntegralAttributeType::UVec4 => AttributeType::UVec4,
+        }
     }
 }
 
@@ -54,6 +118,21 @@ pub struct Attribute {
     pub glsl_type: AttributeType,
 }
 
+pub enum InputAttribute {
+    Integral { name: String, glsl_type: IntegralAttributeType, data_format: IntegralVertexFormat },
+    Float { name: String, glsl_type: FloatAttributeType, data_format: FloatVertexFormat },
+}
+impl From<InputAttribute> for Attribute {
+    fn from(value: InputAttribute) -> Self {
+        match value {
+            InputAttribute::Integral { name, glsl_type, .. } =>
+                Attribute { name, glsl_type: glsl_type.into() },
+            InputAttribute::Float { name, glsl_type, .. } =>
+                Attribute { name, glsl_type: glsl_type.into() },
+        }
+    }
+}
+
 /// An input to the shader pipeline, stored in a [VertexArray].
 #[derive(Clone, Debug, Hash)]
 pub struct Input {
@@ -61,13 +140,44 @@ pub struct Input {
     attribute: Attribute,
 }
 impl Input {
-    pub(crate) fn new<T: ToByteVec>(index: u8, attribute: Attribute, AttributePointer { buffer, stride, offset, format }: AttributePointer<T>) -> Self {
+    // pub(crate) fn new<T: ToByteVec>(index: u8, attribute: Attribute, AttributePointer { buffer, stride, offset, format }: AttributePointer<T>) -> Self {
+    //     buffer.bind();
+    //     // buffer bound & index checked: shouldn't ever fail
+    //     ox::vertex_attrib_pointer(index, format, stride, offset)
+    //         .expect("buffer should be bound, and index checked");
+    //     Self { index, attribute }
+    // }
+    pub(crate) fn new<T: ToByteVec>(index: u8, attribute: InputAttribute,
+        AttributePointer { buffer, stride, offset }: AttributePointer<T>) -> Self {
+        let (stride, offset) = (stride.0, offset.0);
         buffer.bind();
-        // buffer bound & index checked: shouldn't ever fail
-        ox::vertex_attrib_pointer(index, format, stride, offset)
-            .expect("buffer should be bound, and index checked");
-        Self { index, attribute }
+        match attribute {
+            InputAttribute::Integral { name, glsl_type, data_format } => {
+                ox::vertex_attrib_i_pointer(index, data_format, stride, offset)
+                    .expect("buffer should be bound, and index checked");
+                Self {
+                    index, attribute: Attribute { name, glsl_type: glsl_type.into() }
+                }
+            },
+            InputAttribute::Float { name, glsl_type, data_format } => {
+                ox::vertex_attrib_pointer(index, data_format, stride, offset)
+                    .expect("buffer should be bound, and index checked");
+                Self {
+                    index, attribute: Attribute { name, glsl_type: glsl_type.into() }
+                }
+            },
+        }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PipeTargets {
+    VertexFragment,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Pipe {
+    pub targets: PipeTargets,
+    pub attribute: Attribute,
 }
 
 /// A vertex shader and its (nul-terminated) source
