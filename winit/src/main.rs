@@ -36,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Vertices
     //
 
+    #[allow(clippy::items_after_statements)]
     #[derive(ToByteVec, Clone)]
     struct Vertex {
         pos: [f32;2],
