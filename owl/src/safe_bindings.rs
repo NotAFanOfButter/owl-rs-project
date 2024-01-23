@@ -212,6 +212,13 @@ pub enum AttribSize {
     Four = 4,
     Bgra
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum IntegralAttribSize {
+    One = 1,
+    Two = 2,
+    Three = 3,
+    Four = 4,
+}
 /// # GL Invariants
 /// size: 1,2,3,4 or `GL_BGRA`
 /// type: accepted value (GLenum)
@@ -231,6 +238,24 @@ pub enum AttribSize {
 pub fn VertexAttribPointer(index: u8, size: AttribSize, data_type: DataType, normalised: bool, stride: usize, offset: usize) {
     unsafe {
         gl::VertexAttribPointer(index as u32, size.into(), data_type.into(), normalised.into(),
+            stride as i32, offset as *const _)
+    }
+}
+/// # GL Invariants
+/// size: 1,2,3,4
+/// type: accepted value (GLenum)
+/// stride: >= 0
+/// 
+/// # User Invariants
+/// index: < `GL_MAX_VERTEX_ATTRIBS`
+/// array buffer bound to 0; offset: != 0
+///
+/// # Errors
+/// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
+/// `GL_INVALID_OPERATON`: any of the other user invariants are violated
+pub fn VertexAttribIPointer(index: u8, size: IntegralAttribSize, data_type: IntegralDataType, stride: usize, offset: usize) {
+    unsafe {
+        gl::VertexAttribIPointer(index as u32, size.into(), data_type.into(),
             stride as i32, offset as *const _)
     }
 }
@@ -572,6 +597,15 @@ pub enum DataType {
     UnsignedInt2_10_10_10Rev,
     UnsignedInt10f11f11fRev
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum IntegralDataType {
+    Byte,
+    UnsignedByte,
+    Short,
+    UnsignedShort,
+    Int,
+    UnsignedInt,
+}
 
 /// # Notes
 /// `GL_INVALID_ENUM`: not supported, as rust enums *should* make this impossible
@@ -664,6 +698,11 @@ impl From<AttribSize> for gl::types::GLint {
         }
     }
 }
+impl From<IntegralAttribSize> for gl::types::GLint {
+    fn from(val: IntegralAttribSize) -> Self {
+        val as gl::types::GLint
+    }
+}
 impl From<ShaderType> for gl::types::GLenum {
     fn from(val: ShaderType) -> Self {
         match val {
@@ -744,6 +783,18 @@ impl From<DataType> for gl::types::GLenum {
             DataType::Int2_10_10_10Rev => gl::INT_2_10_10_10_REV,
             DataType::UnsignedInt2_10_10_10Rev => gl::UNSIGNED_INT_2_10_10_10_REV,
             DataType::UnsignedInt10f11f11fRev => gl::UNSIGNED_INT_10F_11F_11F_REV,
+        }
+    }
+}
+impl From<IntegralDataType> for gl::types::GLenum {
+    fn from(val: IntegralDataType) -> Self {
+        match val {
+            IntegralDataType::Byte => gl::BYTE,
+            IntegralDataType::UnsignedByte => gl::UNSIGNED_BYTE,
+            IntegralDataType::Short => gl::SHORT,
+            IntegralDataType::UnsignedShort => gl::UNSIGNED_SHORT,
+            IntegralDataType::Int => gl::INT,
+            IntegralDataType::UnsignedInt => gl::UNSIGNED_INT,
         }
     }
 }

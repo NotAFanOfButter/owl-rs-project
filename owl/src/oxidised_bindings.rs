@@ -30,6 +30,7 @@ impl std::fmt::Display for OxError {
 impl std::error::Error for OxError {}
 
 pub use safe_bindings::DataType;
+pub use safe_bindings::IntegralDataType;
 
 pub use safe_bindings::ClearColour as clear_colour;
 pub use safe_bindings::Clear as clear;
@@ -257,11 +258,11 @@ impl From<DataTypeSizeBgra> for DataType {
         }
     }
 }
-pub enum VertexFormat {
-    Size1 { normalised: bool, data_type: DataTypeUnsized },
-    Size2 { normalised: bool, data_type: DataTypeUnsized },
-    Size3 { normalised: bool, data_type: DataTypeSize3 },
-    Size4 { normalised: bool, data_type: DataTypeSize4 },
+pub enum FloatVertexFormat {
+    Size1 { normalise: bool, data_type: DataTypeUnsized },
+    Size2 { normalise: bool, data_type: DataTypeUnsized },
+    Size3 { normalise: bool, data_type: DataTypeSize3 },
+    Size4 { normalise: bool, data_type: DataTypeSize4 },
     /// BGRA data types never normalised
     SizeBgra(DataTypeSizeBgra),
 }
@@ -271,20 +272,44 @@ pub enum VertexFormat {
 /// size BGRA can only be used with types: UnsignedByte, Int2_10_10Rev, UnsignedInt2_10_10Rev
 /// type UnsignedInt10f_11f_11fRev can only be used with size 3
 /// types Int2_10_10Rev and UnsignedInt2_10_10Rev can only be used with size 4 or BGRA
-/// size BGRA can only be used with normalised: false
+/// size BGRA can only be used with normalise: false
 /// # Errors
 /// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
 /// `GL_INVALID_OPERATON`: array buffer bound to 0, offset != 0
-pub fn vertex_attrib_pointer(attribute_index: u8, spec: VertexFormat,
+pub fn vertex_attrib_pointer(attribute_index: u8, spec: FloatVertexFormat,
     stride: usize, offset: usize) -> Result<(),OxError> {
-    let (size, data_type, normalised) = match spec {
-        VertexFormat::Size1 { normalised, data_type } => (AttribSize::One, data_type.into(), normalised),
-        VertexFormat::Size2 { normalised, data_type } => (AttribSize::Two, data_type.into(), normalised),
-        VertexFormat::Size3 { normalised, data_type } => (AttribSize::Three, data_type.into(), normalised),
-        VertexFormat::Size4 { normalised, data_type } => (AttribSize::Four, data_type.into(), normalised),
-        VertexFormat::SizeBgra(data_type) => (AttribSize::Bgra, data_type.into(), false)
+    let (size, data_type, normalise) = match spec {
+        FloatVertexFormat::Size1 { normalise, data_type } => (AttribSize::One, data_type.into(), normalise),
+        FloatVertexFormat::Size2 { normalise, data_type } => (AttribSize::Two, data_type.into(), normalise),
+        FloatVertexFormat::Size3 { normalise, data_type } => (AttribSize::Three, data_type.into(), normalise),
+        FloatVertexFormat::Size4 { normalise, data_type } => (AttribSize::Four, data_type.into(), normalise),
+        FloatVertexFormat::SizeBgra(data_type) => (AttribSize::Bgra, data_type.into(), false)
     };
-    safe_bindings::VertexAttribPointer(attribute_index, size, data_type, normalised, stride, offset);
+    safe_bindings::VertexAttribPointer(attribute_index, size, data_type, normalise, stride, offset);
+    last_error_as_result()
+}
+
+pub use safe_bindings::IntegralAttribSize;
+
+pub enum IntegralVertexFormat {
+    Size1(IntegralDataType),
+    Size2(IntegralDataType),
+    Size3(IntegralDataType),
+    Size4(IntegralDataType),
+}
+
+/// # Errors
+/// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
+/// `GL_INVALID_OPERATON`: array buffer bound to 0, offset != 0
+pub fn vertex_attrib_i_pointer(attribute_index: u8, spec: IntegralVertexFormat,
+    stride: usize, offset: usize) -> Result<(),OxError> {
+    let (size, data_type) = match spec {
+        IntegralVertexFormat::Size1(data_type) => (IntegralAttribSize::One, data_type),
+        IntegralVertexFormat::Size2(data_type) => (IntegralAttribSize::Two, data_type),
+        IntegralVertexFormat::Size3(data_type) => (IntegralAttribSize::Three, data_type),
+        IntegralVertexFormat::Size4(data_type) => (IntegralAttribSize::Four, data_type),
+    };
+    safe_bindings::VertexAttribIPointer(attribute_index, size, data_type, stride, offset);
     last_error_as_result()
 }
 
