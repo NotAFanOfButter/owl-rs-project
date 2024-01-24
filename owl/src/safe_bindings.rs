@@ -1,15 +1,14 @@
 //! # Warning
 //! ## Types
 //! many u32's (and usizes) in this module are actually "u31's", by necessity of conversion to the (non-negative)
-//! i32's requested by openGL.
+//! i32's requested by OpenGL.
 //! ## Creation and Deletion
 //! where a function is documented as taking a "valid" id / name of an object, it is given that the
 //! object has not previously been deleted.
 
 #![allow(non_snake_case)]
-#![allow(dead_code)]
+//#![allow(dead_code)]
 
-use gl;
 use bitflags::bitflags;
 
 /// # Notes
@@ -17,7 +16,7 @@ use bitflags::bitflags;
 #[inline]
 pub fn ClearColour(red: f32, green: f32, blue: f32, alpha: f32) {
     unsafe {
-        gl::ClearColor(red, green, blue, alpha)
+        gl::ClearColor(red, green, blue, alpha);
     }
 }
 
@@ -51,20 +50,24 @@ impl From<ClearFlags> for gl::types::GLbitfield {
 #[inline]
 pub fn Clear(flags: ClearFlags) {
     unsafe {
-        gl::Clear(flags.into())
+        gl::Clear(flags.into());
     }
 }
 
 /// # GL Invariants
 /// length of buffers >= 0
+/// # Panics
+/// This function will panic if the length of buffers > `i32::MAX`.
+/// You should never request that many buffers anyway :|
 #[inline]
 pub fn GenBuffers(buffers: &mut [u32]) {
     unsafe {
         // n: >= 0
-        gl::GenBuffers(buffers.len() as i32, buffers.as_mut_ptr())
+        gl::GenBuffers(i32::try_from(buffers.len()).expect("buffers slice too large (> i32::MAX)"),
+             buffers.as_mut_ptr());
     }
 }
-/// Ease of use for GenBuffers
+/// Ease of use for [`GenBuffers`]
 #[inline]
 pub fn GenBuffer(buffer: &mut u32) {
     GenBuffers(std::slice::from_mut(buffer));
@@ -76,12 +79,12 @@ pub fn GenBuffer(buffer: &mut u32) {
 pub fn DeleteBuffers(buffers: &[u32]) {
     unsafe {
         // n: >= 0
-        gl::DeleteBuffers(buffers.len() as i32, buffers.as_ptr())
+        gl::DeleteBuffers(buffers.len() as i32, buffers.as_ptr());
     }
 }
 #[inline]
 pub fn DeleteBuffer(buffer: u32) {
-    DeleteBuffers(&[buffer])
+    DeleteBuffers(&[buffer]);
 }
 
 /// # GL Invariants

@@ -6,10 +6,10 @@ pub struct OwlError {
 }
 impl OwlError {
     pub(crate) fn custom(message: &str) -> Self {
-        OwlError { info: message.to_owned(), internal: None }
+        Self { info: message.to_owned(), internal: None }
     }
     pub(crate) fn with_context(self, context: &str) -> Self {
-        OwlError { info: format!("{context}, {}", self.info), ..self }
+        Self { info: format!("{context}, {}", self.info), ..self }
     }
 }
 
@@ -25,6 +25,7 @@ impl std::fmt::Display for OwlError {
 
 impl std::error::Error for OwlError {}
 
+#[allow(clippy::redundant_pub_crate)] // emphasise should not be used externally, despite currently private mod
 pub(crate) trait UnmessagedError {
     type MessagedError;
     fn with_message(self, message: &str) -> Self::MessagedError;

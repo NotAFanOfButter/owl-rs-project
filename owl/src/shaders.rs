@@ -29,24 +29,24 @@ pub enum AttributeType {
 impl std::fmt::Display for AttributeType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            AttributeType::Bool => "bool",
-            AttributeType::Int => "int",
-            AttributeType::Float => "float",
-            AttributeType::Vec2 => "vec2",
-            AttributeType::Vec3 => "vec3",
-            AttributeType::Vec4 => "vec4",
-            AttributeType::BVec2 => "bvec2",
-            AttributeType::BVec3 => "bvec3",
-            AttributeType::BVec4 => "bvec4",
-            AttributeType::IVec2 => "ivec2",
-            AttributeType::IVec3 => "ivec3",
-            AttributeType::IVec4 => "ivec4",
-            AttributeType::UVec2 => "uvec2",
-            AttributeType::UVec3 => "uvec3",
-            AttributeType::UVec4 => "uvec4",
-            AttributeType::Mat2 => "mat2",
-            AttributeType::Mat3 => "mat3",
-            AttributeType::Mat4 => "mat4",
+            Self::Bool => "bool",
+            Self::Int => "int",
+            Self::Float => "float",
+            Self::Vec2 => "vec2",
+            Self::Vec3 => "vec3",
+            Self::Vec4 => "vec4",
+            Self::BVec2 => "bvec2",
+            Self::BVec3 => "bvec3",
+            Self::BVec4 => "bvec4",
+            Self::IVec2 => "ivec2",
+            Self::IVec3 => "ivec3",
+            Self::IVec4 => "ivec4",
+            Self::UVec2 => "uvec2",
+            Self::UVec3 => "uvec3",
+            Self::UVec4 => "uvec4",
+            Self::Mat2 => "mat2",
+            Self::Mat3 => "mat3",
+            Self::Mat4 => "mat4",
         };    
         write!(f, "{s}")
     }
@@ -70,17 +70,17 @@ pub enum FloatAttributeType {
 impl From<FloatAttributeType> for AttributeType {
     fn from(value: FloatAttributeType) -> Self {
         match value {
-            FloatAttributeType::Bool => AttributeType::Bool,
-            FloatAttributeType::Float => AttributeType::Float,
-            FloatAttributeType::Vec2 => AttributeType::Vec2,
-            FloatAttributeType::Vec3 => AttributeType::Vec3,
-            FloatAttributeType::Vec4 => AttributeType::Vec4,
-            FloatAttributeType::BVec2 => AttributeType::BVec2,
-            FloatAttributeType::BVec3 => AttributeType::BVec3,
-            FloatAttributeType::BVec4 => AttributeType::BVec4,
-            FloatAttributeType::Mat2 => AttributeType::Mat2,
-            FloatAttributeType::Mat3 => AttributeType::Mat3,
-            FloatAttributeType::Mat4 => AttributeType::Mat4,
+            FloatAttributeType::Bool => Self::Bool,
+            FloatAttributeType::Float => Self::Float,
+            FloatAttributeType::Vec2 => Self::Vec2,
+            FloatAttributeType::Vec3 => Self::Vec3,
+            FloatAttributeType::Vec4 => Self::Vec4,
+            FloatAttributeType::BVec2 => Self::BVec2,
+            FloatAttributeType::BVec3 => Self::BVec3,
+            FloatAttributeType::BVec4 => Self::BVec4,
+            FloatAttributeType::Mat2 => Self::Mat2,
+            FloatAttributeType::Mat3 => Self::Mat3,
+            FloatAttributeType::Mat4 => Self::Mat4,
         }
     }
 }
@@ -99,13 +99,13 @@ pub enum IntegralAttributeType {
 impl From<IntegralAttributeType> for AttributeType {
     fn from(value: IntegralAttributeType) -> Self {
         match value {
-            IntegralAttributeType::Int => AttributeType::Int,
-            IntegralAttributeType::IVec2 => AttributeType::IVec2,
-            IntegralAttributeType::IVec3 => AttributeType::IVec3,
-            IntegralAttributeType::IVec4 => AttributeType::IVec4,
-            IntegralAttributeType::UVec2 => AttributeType::UVec2,
-            IntegralAttributeType::UVec3 => AttributeType::UVec3 ,
-            IntegralAttributeType::UVec4 => AttributeType::UVec4,
+            IntegralAttributeType::Int => Self::Int,
+            IntegralAttributeType::IVec2 => Self::IVec2,
+            IntegralAttributeType::IVec3 => Self::IVec3,
+            IntegralAttributeType::IVec4 => Self::IVec4,
+            IntegralAttributeType::UVec2 => Self::UVec2,
+            IntegralAttributeType::UVec3 => Self::UVec3 ,
+            IntegralAttributeType::UVec4 => Self::UVec4,
         }
     }
 }
@@ -126,14 +126,14 @@ impl From<InputAttribute> for Attribute {
     fn from(value: InputAttribute) -> Self {
         match value {
             InputAttribute::Integral { name, glsl_type, .. } =>
-                Attribute { name, glsl_type: glsl_type.into() },
+                Self { name, glsl_type: glsl_type.into() },
             InputAttribute::Float { name, glsl_type, .. } =>
-                Attribute { name, glsl_type: glsl_type.into() },
+                Self { name, glsl_type: glsl_type.into() },
         }
     }
 }
 
-/// An input to the shader pipeline, stored in a [VertexArray].
+/// An input to the shader pipeline, stored in a [`VertexArray`].
 #[derive(Clone, Debug, Hash)]
 pub struct Input {
     index: u8,
@@ -205,11 +205,12 @@ impl Program {
 impl Drop for Program {
     fn drop(&mut self) {
         ox::delete_program(self.0)
-            .expect("program only deleted on drop")
+            .expect("program only deleted on drop");
     }
 }
 
 /// A representation of the shader pipeline as a whole, intended to be used as a builder, with the final stage ending in 'compile'
+#[must_use]
 #[derive(Debug)]
 pub struct ShaderPipeline {
     version: u32,
@@ -261,6 +262,9 @@ impl ShaderPipeline {
         self.pipes.push(pipe);
         self
     }
+    /// # Panics
+    ///
+    /// This function should never panic. If it does, this is a bug.
     pub fn compile(self) -> Result<Program,OwlError> {
         // add inputs to vertex code
         let version_prelude = format!("#version {} core\n", self.version);

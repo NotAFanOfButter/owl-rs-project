@@ -108,7 +108,7 @@ impl ToByteVec for f64 {
 }
 impl ToByteVec for bool {
     fn to_byte_vec(self) -> Vec<u8> {
-        (self as u8).to_byte_vec()
+        u8::from(self).to_byte_vec()
     }
     fn stride(&self) -> Bytes {
         Bytes(1)
@@ -116,7 +116,7 @@ impl ToByteVec for bool {
 }
 impl<T: ToByteVec, const C: usize> ToByteVec for [T; C] {
     fn to_byte_vec(self) -> Vec<u8> {
-        self.into_iter().map(|t| t.to_byte_vec()).flatten().collect()
+        self.into_iter().flat_map(ToByteVec::to_byte_vec).collect()
     }
     fn stride(&self) -> Bytes {
         if C > 0 {
@@ -128,7 +128,7 @@ impl<T: ToByteVec, const C: usize> ToByteVec for [T; C] {
 }
 impl<T: ToByteVec> ToByteVec for Vec<T> {
     fn to_byte_vec(self) -> Vec<u8> {
-        self.into_iter().map(|t| t.to_byte_vec()).flatten().collect()
+        self.into_iter().flat_map(ToByteVec::to_byte_vec).collect()
     }
     fn stride(&self) -> Bytes {
         let len = self.len();

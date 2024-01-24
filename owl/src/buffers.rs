@@ -12,7 +12,7 @@ struct Buffer<T: ToByteVec> {
 }
 impl<T: ToByteVec> Buffer<T> {
     fn new() -> Self {
-        Buffer {
+        Self {
             id: ox::gen_buffer(),
             _ghost: std::marker::PhantomData,
         }
@@ -97,14 +97,14 @@ impl<T: ToByteVec> ElementBuffer<T> {
     /// let's see if we can't limit the scope to crate.
     pub(crate) fn bind(&self) {
         ox::bind_buffer(ox::BufferType::ElementArray, Some(self.inner.id))
-            .expect("buffer should not be deleted yet")
+            .expect("buffer should not be deleted yet");
     }
-    pub(crate) fn unbind(&self) {
-        ox::bind_buffer(ox::BufferType::ElementArray, None).expect("binding 0 always succeeds")
+    pub(crate) fn unbind() {
+        ox::bind_buffer(ox::BufferType::ElementArray, None).expect("binding 0 always succeeds");
     }
 }
 impl<T: ToByteVec> Drop for ElementBuffer<T> {
     fn drop(&mut self) {
-        ox::delete_buffer(self.inner.id)
+        ox::delete_buffer(self.inner.id);
     }
 }

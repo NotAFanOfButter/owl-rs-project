@@ -7,7 +7,7 @@ pub mod oxidised_bindings;
 pub(crate) use oxidised_bindings as ox;
 
 pub fn load_proc(context: &GlContext) {
-    gl::load_with(|symbol| context.get_proc_address(symbol) as *const _);
+    gl::load_with(|symbol| context.get_proc_address(symbol).cast());
 }
 
 mod traits;
@@ -129,7 +129,6 @@ pub mod prelude;
 //         Self { id, data: TypedData::U32(Vec::new()) }
 //     }
 //     // None => Insufficient Memory
-//     // TODO: transform into Result
 //     fn new_data (data: TypedData, usage_pattern: BufferUsage) -> Option<Self> {
 //         let new_buffer = Self { data, ..Self::new() };
 //         new_buffer.bind();
