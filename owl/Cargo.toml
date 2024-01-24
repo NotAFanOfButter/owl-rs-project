@@ -9,7 +9,8 @@ edition = "2021"
 pedantic = "warn"
 nursery = "warn"
 unwrap_used = "deny"
-allow-one-hash-in-raw-strings = "allow"
+undocumented_unsafe_blocks = "deny"
+option_if_let_else = { level = "allow", priority = 1}
 
 [dependencies]
 bitflags = "2.4.1"
