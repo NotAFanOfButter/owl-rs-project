@@ -38,10 +38,6 @@ impl<T: ToByteVec> VertexArray<T> {
         self.elements = Some(buffer);
         self
     }
-    /// # Panics
-    ///
-    /// This function should never panic. If it does, this is a bug.
-    ///
     /// # Errors
     ///
     /// This function will return an error if the maximum number of inputs is exceeded.

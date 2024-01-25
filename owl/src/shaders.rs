@@ -262,9 +262,6 @@ impl ShaderPipeline {
         self.pipes.push(pipe);
         self
     }
-    /// # Panics
-    ///
-    /// This function should never panic. If it does, this is a bug.
     pub fn compile(self) -> Result<Program,OwlError> {
         // add inputs to vertex code
         let version_prelude = format!("#version {} core\n", self.version);
