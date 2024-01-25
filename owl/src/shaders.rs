@@ -196,9 +196,18 @@ struct FragmentShader {
 /// Newtype allowing for deletion on drop
 pub struct Program(ox::ShaderProgram);
 
+// INVARIANTS: only deleted on drop
 impl Program {
     pub(crate) fn use_self(&self) -> Result<(),OwlError> {
-        ox::use_program(self.0).with_message("using program failed")
+        ox::use_program(self.0)
+            .map_err(|e| {
+                match e {
+                    // cannot be deleted yet, so only possible error (I hope)
+                    ox::OxError::BaseError(crate::OriginalError::InvalidOperation) =>
+                        e.with_message("transform feedback mode active"),
+                    _ => e.with_message("no other errors should be produced")
+                }.with_context("using program failed")
+            })
     }
 }
 
@@ -227,9 +236,9 @@ impl ShaderPipeline {
             return Err(OwlError::custom("incorrect glsl version, accepted versions: 430"));
         }
         let vertex = ox::create_shader(ox::ShaderType::Vertex)
-            .with_message("creating pipeline (vertex shader)")?;
+            .with_context("creating pipeline (vertex shader)")?;
         let fragment = ox::create_shader(ox::ShaderType::Fragment)
-            .with_message("creating pipeline (fragment shader)")?;
+            .with_context("creating pipeline (fragment shader)")?;
         Ok(Self {
             version: glsl_version,
             vertex: VertexShader { shader: vertex, source: CString::default() },
@@ -302,15 +311,17 @@ impl ShaderPipeline {
         ox::shader_source(self.vertex.shader, &[vertex_source]).and(
             ox::shader_source(self.fragment.shader, &[fragment_source]))
             .expect("shaders not yet deleted");
-        ox::compile_shader(self.vertex.shader).with_message("compiling pipeline (vertex shader)")?;
-        ox::compile_shader(self.fragment.shader).with_message("compiling pipeline (fragment shader)")?;
+        // shaders not yet deleted, so only ShaderErrors
+        ox::compile_shader(self.vertex.shader).with_context("compiling pipeline (vertex shader)")?;
+        ox::compile_shader(self.fragment.shader).with_context("compiling pipeline (fragment shader)")?;
         // link program
-        let program = ox::create_program().with_message("compiling pipeline (shader program)")?;
+        let program = ox::create_program().with_context("compiling pipeline (shader program)")?;
         ox::attach_shader(program, self.vertex.shader)
             .expect("shader is neither deleted, nor already attached");
         ox::attach_shader(program, self.fragment.shader)
             .expect("shader is neither deleted, nor already attached");
-        ox::link_program(program).with_message("compiling pipeline (linking program)")?;
+        ox::link_program(program)
+            .expect("program has not been deleted, is not active, nor is in transform feedback mode");
         ox::delete_shader(self.vertex.shader)
             .expect("shader is not deleted");
         ox::delete_shader(self.fragment.shader)
