@@ -42,7 +42,7 @@ pub use safe_bindings::ClearFlags;
 fn last_error() -> Option<OxError> {
     let mut error = None;
     while let Some(e) = safe_bindings::GetError() {
-        error = Some(e.into())
+        error = Some(e.into());
     }
     error
 }
@@ -64,17 +64,18 @@ pub fn gen_buffers(count: usize) -> Vec<Buffer> {
     safe_bindings::GenBuffers(buffer_ids.as_mut_slice());
     buffer_ids.into_iter().map(Buffer).collect()
 }
+#[allow(clippy::must_use_candidate)]    // basically constructor, if it's called, it will be used
 pub fn gen_buffer() -> Buffer {
     let mut buffer_id = 0;
     safe_bindings::GenBuffer(&mut buffer_id);
     Buffer(buffer_id)
 }
 pub fn delete_buffers(buffers: Vec<Buffer>) {
-    let buffer_ids: Vec<u32> = buffers.iter().map(|b| b.0).collect();
+    let buffer_ids: Vec<u32> = buffers.into_iter().map(|b| b.0).collect();
     safe_bindings::DeleteBuffers(buffer_ids.as_slice());
 }
 pub fn delete_buffer(buffer: Buffer) {
-    safe_bindings::DeleteBuffer(buffer.0)
+    safe_bindings::DeleteBuffer(buffer.0);
 }
 
 pub use safe_bindings::BufferType;
@@ -120,13 +121,14 @@ pub fn gen_vertex_arrays(count: usize) -> Vec<VertexArray> {
     safe_bindings::GenVertexArrays(va_ids.as_mut_slice());
     va_ids.into_iter().map(VertexArray).collect()
 }
+#[allow(clippy::must_use_candidate)]    // basically constructor, if it's called, it will be used
 pub fn gen_vertex_array() -> VertexArray {
     let mut id = 0;
     safe_bindings::GenVertexArray(&mut id);
     VertexArray(id)
 }
 pub fn delete_vertex_arrays(vertex_arrays: Vec<VertexArray>) {
-    let ids: Vec<u32> = vertex_arrays.iter().map(|v| v.0).collect();
+    let ids: Vec<u32> = vertex_arrays.into_iter().map(|v| v.0).collect();
     safe_bindings::DeleteVertexArrays(ids.as_slice());
 }
 pub fn delete_vertex_array(vertex_array: VertexArray) {
@@ -134,7 +136,7 @@ pub fn delete_vertex_array(vertex_array: VertexArray) {
 }
 
 /// # Errors
-/// `GL_INVALID_VALUE`: vertex_array was deleted
+/// `GL_INVALID_VALUE`: `vertex_array` was deleted
 pub fn bind_vertex_array(vertex_array: Option<VertexArray>) -> Result<(),OxError>{
     safe_bindings::BindVertexArray(vertex_array.map_or(0, |va| va.0));
     last_error_as_result()
@@ -142,14 +144,15 @@ pub fn bind_vertex_array(vertex_array: Option<VertexArray>) -> Result<(),OxError
 
 /// # Errors
 /// `GL_INVALID_OPERATON`: no vertex array object is bound
-/// `GL_INVALID_VALUE`: attribute_index >= `GL_MAX_VERTEX_ATTRIBS`
+/// `GL_INVALID_VALUE`: `attribute_index` >= `GL_MAX_VERTEX_ATTRIBS`
 pub fn enable_vertex_attrib_array(attribute_index: u8) -> Result<(),OxError> {
     safe_bindings::EnableVertexAttribArray(attribute_index);
     last_error_as_result()
 }
 
 pub use safe_bindings::AttribSize;
-/// Subenum of DataType
+/// Subenum of [`DataType`]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DataTypeUnsized {
     Byte,
     UnsignedByte,
@@ -165,20 +168,21 @@ pub enum DataTypeUnsized {
 impl From<DataTypeUnsized> for DataType {
     fn from(val: DataTypeUnsized) -> Self {
         match val {
-            DataTypeUnsized::Byte => DataType::Byte,
-            DataTypeUnsized::UnsignedByte => DataType::UnsignedByte,
-            DataTypeUnsized::Short => DataType::Short,
-            DataTypeUnsized::UnsignedShort => DataType::UnsignedShort,
-            DataTypeUnsized::Int => DataType::Int,
-            DataTypeUnsized::UnsignedInt => DataType::UnsignedInt,
-            DataTypeUnsized::HalfFloat => DataType::HalfFloat,
-            DataTypeUnsized::Float => DataType::Float,
-            DataTypeUnsized::Double => DataType::Double,
-            DataTypeUnsized::Fixed => DataType::Fixed
+            DataTypeUnsized::Byte => Self::Byte,
+            DataTypeUnsized::UnsignedByte => Self::UnsignedByte,
+            DataTypeUnsized::Short => Self::Short,
+            DataTypeUnsized::UnsignedShort => Self::UnsignedShort,
+            DataTypeUnsized::Int => Self::Int,
+            DataTypeUnsized::UnsignedInt => Self::UnsignedInt,
+            DataTypeUnsized::HalfFloat => Self::HalfFloat,
+            DataTypeUnsized::Float => Self::Float,
+            DataTypeUnsized::Double => Self::Double,
+            DataTypeUnsized::Fixed => Self::Fixed
         }
     }
 }
-/// Subenum of DataType
+/// Subenum of [`DataType`]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DataTypeSize3 {
     Byte,
     UnsignedByte,
@@ -196,21 +200,22 @@ pub enum DataTypeSize3 {
 impl From<DataTypeSize3> for DataType {
     fn from(val: DataTypeSize3) -> Self {
         match val {
-            DataTypeSize3::Byte => DataType::Byte,
-            DataTypeSize3::UnsignedByte => DataType::UnsignedByte,
-            DataTypeSize3::Short => DataType::Short,
-            DataTypeSize3::UnsignedShort => DataType::UnsignedShort,
-            DataTypeSize3::Int => DataType::Int,
-            DataTypeSize3::UnsignedInt => DataType::UnsignedInt,
-            DataTypeSize3::HalfFloat => DataType::HalfFloat,
-            DataTypeSize3::Float => DataType::Float,
-            DataTypeSize3::Double => DataType::Double,
-            DataTypeSize3::Fixed => DataType::Fixed,
-            DataTypeSize3::UnsignedInt10f11f11fRev => DataType::UnsignedInt10f11f11fRev
+            DataTypeSize3::Byte => Self::Byte,
+            DataTypeSize3::UnsignedByte => Self::UnsignedByte,
+            DataTypeSize3::Short => Self::Short,
+            DataTypeSize3::UnsignedShort => Self::UnsignedShort,
+            DataTypeSize3::Int => Self::Int,
+            DataTypeSize3::UnsignedInt => Self::UnsignedInt,
+            DataTypeSize3::HalfFloat => Self::HalfFloat,
+            DataTypeSize3::Float => Self::Float,
+            DataTypeSize3::Double => Self::Double,
+            DataTypeSize3::Fixed => Self::Fixed,
+            DataTypeSize3::UnsignedInt10f11f11fRev => Self::UnsignedInt10f11f11fRev
         }
     }
 }
-/// Subenum of DataType
+/// Subenum of [`DataType`]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DataTypeSize4 {
     Byte,
     UnsignedByte,
@@ -228,22 +233,23 @@ pub enum DataTypeSize4 {
 impl From<DataTypeSize4> for DataType {
     fn from(val: DataTypeSize4) -> Self {
         match val {
-            DataTypeSize4::Byte => DataType::Byte,
-            DataTypeSize4::UnsignedByte => DataType::UnsignedByte,
-            DataTypeSize4::Short => DataType::Short,
-            DataTypeSize4::UnsignedShort => DataType::UnsignedShort,
-            DataTypeSize4::Int => DataType::Int,
-            DataTypeSize4::UnsignedInt => DataType::UnsignedInt,
-            DataTypeSize4::HalfFloat => DataType::HalfFloat,
-            DataTypeSize4::Float => DataType::Float,
-            DataTypeSize4::Double => DataType::Double,
-            DataTypeSize4::Fixed => DataType::Fixed,
-            DataTypeSize4::Int2_10_10_10Rev => DataType::Int2_10_10_10Rev,
-            DataTypeSize4::UnsignedInt2_10_10_10Rev => DataType::UnsignedInt2_10_10_10Rev,
+            DataTypeSize4::Byte => Self::Byte,
+            DataTypeSize4::UnsignedByte => Self::UnsignedByte,
+            DataTypeSize4::Short => Self::Short,
+            DataTypeSize4::UnsignedShort => Self::UnsignedShort,
+            DataTypeSize4::Int => Self::Int,
+            DataTypeSize4::UnsignedInt => Self::UnsignedInt,
+            DataTypeSize4::HalfFloat => Self::HalfFloat,
+            DataTypeSize4::Float => Self::Float,
+            DataTypeSize4::Double => Self::Double,
+            DataTypeSize4::Fixed => Self::Fixed,
+            DataTypeSize4::Int2_10_10_10Rev => Self::Int2_10_10_10Rev,
+            DataTypeSize4::UnsignedInt2_10_10_10Rev => Self::UnsignedInt2_10_10_10Rev,
         }
     }
 }
-/// Subenum of DataType
+/// Subenum of [`DataType`]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DataTypeSizeBgra {
     UnsignedByte,
     Int2_10_10_10Rev,
@@ -252,12 +258,13 @@ pub enum DataTypeSizeBgra {
 impl From<DataTypeSizeBgra> for DataType {
     fn from(val: DataTypeSizeBgra) -> Self {
         match val {
-            DataTypeSizeBgra::UnsignedByte => DataType::UnsignedByte,
-            DataTypeSizeBgra::Int2_10_10_10Rev => DataType::Int2_10_10_10Rev,
-            DataTypeSizeBgra::UnsignedInt2_10_10_10Rev => DataType::UnsignedInt2_10_10_10Rev,
+            DataTypeSizeBgra::UnsignedByte => Self::UnsignedByte,
+            DataTypeSizeBgra::Int2_10_10_10Rev => Self::Int2_10_10_10Rev,
+            DataTypeSizeBgra::UnsignedInt2_10_10_10Rev => Self::UnsignedInt2_10_10_10Rev,
         }
     }
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FloatVertexFormat {
     Size1 { normalise: bool, data_type: DataTypeUnsized },
     Size2 { normalise: bool, data_type: DataTypeUnsized },
@@ -268,13 +275,13 @@ pub enum FloatVertexFormat {
 }
 /// # Notes
 /// When specifying a vertex attribute pointer, only certain combinations of size, type, and
-/// normalisation are accepted.
-/// size BGRA can only be used with types: UnsignedByte, Int2_10_10Rev, UnsignedInt2_10_10Rev
-/// type UnsignedInt10f_11f_11fRev can only be used with size 3
-/// types Int2_10_10Rev and UnsignedInt2_10_10Rev can only be used with size 4 or BGRA
-/// size BGRA can only be used with normalise: false
+/// normalisation are accepted in `spec`.
+/// size BGRA can only be used with types: `UnsignedByte`, `Int2_10_10Rev`, `UnsignedInt2_10_10Rev`
+/// type `UnsignedInt10f_11f_11fRev` can only be used with size 3
+/// types `Int2_10_10Rev` and `UnsignedInt2_10_10Rev` can only be used with size 4 or `BGRA`
+/// size `BGRA `can only be used with `normalise`: false
 /// # Errors
-/// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
+/// `GL_INVALID_VALUE`: index >= `GL_MAX_VERTEX_ATTRIBS`
 /// `GL_INVALID_OPERATON`: array buffer bound to 0, offset != 0
 pub fn vertex_attrib_pointer(attribute_index: u8, spec: FloatVertexFormat,
     stride: usize, offset: usize) -> Result<(),OxError> {
@@ -291,6 +298,7 @@ pub fn vertex_attrib_pointer(attribute_index: u8, spec: FloatVertexFormat,
 
 pub use safe_bindings::IntegralAttribSize;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IntegralVertexFormat {
     Size1(IntegralDataType),
     Size2(IntegralDataType),
@@ -299,7 +307,7 @@ pub enum IntegralVertexFormat {
 }
 
 /// # Errors
-/// `GL_INVALID_VALUE`: index >= GL_MAX_VERTEX_ATTRIBS
+/// `GL_INVALID_VALUE`: index >= `GL_MAX_VERTEX_ATTRIBS`
 /// `GL_INVALID_OPERATON`: array buffer bound to 0, offset != 0
 pub fn vertex_attrib_i_pointer(attribute_index: u8, spec: IntegralVertexFormat,
     stride: usize, offset: usize) -> Result<(),OxError> {
@@ -317,12 +325,14 @@ pub fn vertex_attrib_i_pointer(attribute_index: u8, spec: IntegralVertexFormat,
 // get*
 //
 pub use safe_bindings::Parameter as ParameterQuery;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum UIntParameter {
     MaxVertexAttribs,
     ArrayBufferBinding,
     ElementBufferBinding,
     MaxComputeShaderStorageBlocks,
 }
+#[must_use]
 pub fn get_uint(parameter: UIntParameter) -> u32 {
     let mut data = [0];
     let parameter = match parameter {
@@ -331,12 +341,14 @@ pub fn get_uint(parameter: UIntParameter) -> u32 {
         UIntParameter::ElementBufferBinding => safe_bindings::Parameter::ElementBufferBinding,
         UIntParameter::MaxComputeShaderStorageBlocks => safe_bindings::Parameter::MaxComputeShaderStorageBlocks,
     };
+    // SAFETY: only parameters that are single values may be used (constrained by UintParameter),
+    // so data must always be of length one.
     unsafe {
-        // SAFETY: only parameters that are single values may be used (constrained by UintParameter),
-        // so data must always be of length one.
         safe_bindings::GetIntegerv(parameter, &mut data);
     }
-    data[0] as u32
+    // CAST: only parameters corresponding to uints are allowed, so guaranteed positive
+    #[allow(clippy::cast_sign_loss)]
+    return data[0] as u32;
 }
 
 //
@@ -352,10 +364,10 @@ pub enum ShaderError {
 impl std::fmt::Display for ShaderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ShaderError::CompilationFailed { info_log } => write!(f, "shader compilation failed\n{info_log}"),
-            ShaderError::CreationFailed => write!(f, "shader creation failed"),
-            ShaderError::ProgramCreationFailed => write!(f, "shader program creation failed"),
-            ShaderError::LinkingFailed { info_log } => write!(f, "shader program linking failed\n{info_log}"),
+            Self::CompilationFailed { info_log } => write!(f, "shader compilation failed\n{info_log}"),
+            Self::CreationFailed => write!(f, "shader creation failed"),
+            Self::ProgramCreationFailed => write!(f, "shader program creation failed"),
+            Self::LinkingFailed { info_log } => write!(f, "shader program linking failed\n{info_log}"),
         }
     }
 }
@@ -364,6 +376,9 @@ impl std::error::Error for ShaderError {}
 pub use safe_bindings::ShaderType;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Shader(u32);
+/// # Errors
+///
+/// This function will return an error if shader creation fails, no documentation as to why this may happen.
 pub fn create_shader(shader_type: ShaderType) -> Result<Shader,OxError> {
     match safe_bindings::CreateShader(shader_type) {
         0 => Err(ShaderError::CreationFailed.into()),
@@ -399,7 +414,7 @@ pub fn compile_shader(shader: Shader) -> Result<(),OxError> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ShaderCompileStatus {
     Succeeded,
     Failed
@@ -410,6 +425,8 @@ pub fn get_shader_compile_status(shader: Shader) -> Result<ShaderCompileStatus, 
     let mut data = 0;
     safe_bindings::GetShaderiv(shader.0, safe_bindings::ShaderParameter::CompileStatus, &mut data);
     last_error_as_result()?;
+    // CAST: `data` is really a bool
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     match data as u8 {
         safe_bindings::glTrue => Ok(ShaderCompileStatus::Succeeded),
         safe_bindings::glFalse => Ok(ShaderCompileStatus::Failed),
@@ -417,6 +434,7 @@ pub fn get_shader_compile_status(shader: Shader) -> Result<ShaderCompileStatus, 
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ShaderDeleteStatus {
     Valid,
     Deleted
@@ -427,6 +445,8 @@ pub fn get_shader_delete_status(shader: Shader) -> Result<ShaderDeleteStatus, Ox
     let mut data = 0;
     safe_bindings::GetShaderiv(shader.0, safe_bindings::ShaderParameter::DeleteStatus, &mut data);
     last_error_as_result()?;
+    // CAST: `data` is really a bool
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     match data as u8 {
         safe_bindings::glTrue => Ok(ShaderDeleteStatus::Deleted),
         safe_bindings::glFalse => Ok(ShaderDeleteStatus::Valid),
@@ -439,16 +459,25 @@ pub fn get_shader_info_log_length(shader: Shader) -> Result<usize, OxError> {
     let mut data = 0;
     safe_bindings::GetShaderiv(shader.0, safe_bindings::ShaderParameter::InfoLogLength, &mut data);
     last_error_as_result()?;
+    // CAST: the log length is unsigned
+    #[allow(clippy::cast_sign_loss)]
     Ok(data as usize)
 }
 /// # Errors
 /// `GL_INVALID_OPERATION`: shader has been deleted
 pub fn get_shader_info_log(shader: Shader) -> Result<String, OxError> {
     let mut buffer = vec![0; get_shader_info_log_length(shader)?];
+    // shader valid as it successfully got the length -> no need for error checking
     safe_bindings::GetShaderInfoLog(shader.0, buffer.as_mut_slice(), None);
-    // shader valid as it successfully got the length
-    let utf8_buffer: Vec<u8> = buffer.iter().take(buffer.len()-1).map(|&i| i as u8).collect();
-    Ok(String::from_utf8_lossy(&utf8_buffer).to_string())
+    // SAFETY: `buffer` is valid for length-1 reads, and properly aligned
+    //         * it is contained in one allocated object
+    //         * non-nul: c_str can only contain one nul - at the end (excluded here)
+    //         always points to length - 1 values, guaranteed to be initialised above
+    //         shadowed, so the memory cannot be mutated while the slice lives
+    //         shader_info_log may be at most of length i32::MAX (get_shader_* relies on get_shader_iv, which returns an i32)
+    let buffer = unsafe { std::slice::from_raw_parts(buffer.as_ptr().cast(), buffer.len()-1) };
+    let utf8_buffer = String::from_utf8_lossy(buffer);
+    Ok(utf8_buffer.to_string())
 }
 
 //
@@ -456,21 +485,25 @@ pub fn get_shader_info_log(shader: Shader) -> Result<String, OxError> {
 //
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ShaderProgram(u32);
+/// # Errors
+///
+/// This function will return an error if program creation fails, no documentation as to why this may happen.
 pub fn create_program() -> Result<ShaderProgram, OxError> {
     match safe_bindings::CreateProgram() {
         0 => Err(ShaderError::ProgramCreationFailed.into()),
         p => Ok(ShaderProgram(p))
     }
 }
-/// # Errors:
+/// # Errors
 /// `GL_INVALID_VALUE`: program was deleted
 pub fn delete_program(program: ShaderProgram) -> Result<(),OxError> {
     safe_bindings::DeleteProgram(program.0);
     last_error_as_result()
 }
 
-/// # Errors:
+/// # Errors
 /// `GL_INVALID_VALUE`: program was deleted
+/// `GL_INVALID_OPERATION`: program is active, and transform feedback mode is active
 pub fn link_program(program: ShaderProgram) -> Result<(),OxError> {
     safe_bindings::LinkProgram(program.0);
     last_error_as_result()?;
@@ -482,7 +515,7 @@ pub fn link_program(program: ShaderProgram) -> Result<(),OxError> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LinkStatus {
     Succeeded,
     Failed
@@ -493,6 +526,8 @@ pub fn get_program_link_status(program: ShaderProgram) -> Result<LinkStatus, OxE
     let mut link_success = 0;
     safe_bindings::GetProgramiv(program.0, safe_bindings::ProgramParameter::LinkStatus, &mut link_success);
     last_error_as_result()?;
+    // CAST: `data` is really a bool
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     match link_success as u8 {
         safe_bindings::glTrue => Ok(LinkStatus::Succeeded),
         safe_bindings::glFalse => Ok(LinkStatus::Failed),
@@ -505,6 +540,8 @@ pub fn get_program_info_log_length(program: ShaderProgram) -> Result<usize, OxEr
     let mut data = 0;
     safe_bindings::GetProgramiv(program.0, safe_bindings::ProgramParameter::InfoLogLength, &mut data);
     last_error_as_result()?;
+    // CAST: the log length is unsigned
+    #[allow(clippy::cast_sign_loss)]
     Ok(data as usize)
 }
 
@@ -514,8 +551,14 @@ pub fn get_program_info_log(program: ShaderProgram) -> Result<String, OxError> {
     let mut buffer = vec![0; get_program_info_log_length(program)?];
     safe_bindings::GetProgramInfoLog(program.0, buffer.as_mut_slice(), None);
     // program valid as it got length -> no need for error checking
-    let utf8_buffer: Vec<u8> = buffer.iter().take(buffer.len()-1).map(|&i| i as u8).collect();
-    Ok(String::from_utf8_lossy(&utf8_buffer).to_string())
+    if let Some(c) = buffer.last() {
+        assert_eq!(*c, 0, "buffer ends with 0, if it exists at all");
+        // SAFETY: nul-terminated, single object, non-null, not mutated during, ends within `isize::MAX bytes`
+        let utf8_buffer = unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr()) }.to_string_lossy();
+        Ok(utf8_buffer.to_string())
+    } else {
+        Ok(String::new())
+    }
 }
 
 /// # Errors

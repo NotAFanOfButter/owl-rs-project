@@ -10,7 +10,8 @@ pedantic = "warn"
 nursery = "warn"
 unwrap_used = "deny"
 undocumented_unsafe_blocks = "deny"
-option_if_let_else = { level = "allow", priority = 1}
+option_if_let_else = { level = "allow", priority = 1 }
+missing_panics_doc = { level = "allow", priority = 1 }
 
 [dependencies]
 bitflags = "2.4.1"
