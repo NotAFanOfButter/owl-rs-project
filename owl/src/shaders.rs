@@ -118,6 +118,7 @@ pub struct Attribute {
     pub glsl_type: AttributeType,
 }
 
+#[derive(Debug, Clone)] // not necessarily unique, could be on different buffers ==> not Eq, Hash, etc...
 pub enum InputAttribute {
     Integral { name: String, glsl_type: IntegralAttributeType, data_format: IntegralVertexFormat },
     Float { name: String, glsl_type: FloatAttributeType, data_format: FloatVertexFormat },
@@ -231,6 +232,11 @@ pub struct ShaderPipeline {
 }
 
 impl ShaderPipeline {
+    /// # Errors
+    ///
+    /// This function will error if:
+    /// * incorrect `glsl_version`, supported versions include 430; or
+    /// * creation of either shader fails.
     pub fn new(glsl_version: u32) -> Result<Self,OwlError> {
         if ![430].contains(&glsl_version) {
             return Err(OwlError::custom("incorrect glsl version, accepted versions: 430"));
@@ -254,12 +260,18 @@ impl ShaderPipeline {
             ..self
         }
     }
+    /// # Errors
+    ///
+    /// This function will return an error if `source` contains nul bytes.
     pub fn vertex_body(self, source: &str) -> Result<Self,std::ffi::NulError> {
         Ok(Self {
             vertex: VertexShader { source: CString::new(source)?, ..self.vertex  },
             ..self
         })
     }
+    /// # Errors
+    ///
+    /// This function will return an error if `source` contains nul bytes.
     pub fn fragment_body(self, source: &str, output: Attribute) -> Result<Self,std::ffi::NulError> {
         Ok(Self {
             fragment: FragmentShader { source: CString::new(source)?, ..self.fragment },
@@ -271,6 +283,11 @@ impl ShaderPipeline {
         self.pipes.push(pipe);
         self
     }
+    /// # Errors
+    ///
+    /// This function will return an error if:
+    /// * any shaders fail to compile; or
+    /// * a new shader program cannot be created.
     pub fn compile(self) -> Result<Program,OwlError> {
         // add inputs to vertex code
         let version_prelude = format!("#version {} core\n", self.version);
@@ -280,6 +297,7 @@ impl ShaderPipeline {
             };
             let ins_prelude: String = self.inputs.iter().map(input_to_glsl).collect();
             let body = self.vertex.source.into_string().expect("created from &str, so valid UTF-8");
+            #[allow(clippy::unnecessary_filter_map)] // more variants later will require filtering
             let pipes_prelude: String = self.pipes.iter()
                 .filter_map(|Pipe { targets, attribute }| {
                     match targets {
@@ -293,6 +311,7 @@ impl ShaderPipeline {
         };
         // println!("{}", vertex_source.clone().into_string().unwrap());
         let fragment_source = {
+            #[allow(clippy::unnecessary_filter_map)] // more variants later will require filtering
             let pipes_prelude: String = self.pipes.iter()
                 .filter_map(|Pipe { targets, attribute }| {
                     match targets {
