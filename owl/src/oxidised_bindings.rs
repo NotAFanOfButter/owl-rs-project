@@ -62,20 +62,24 @@ pub struct Buffer(u32);
 pub fn gen_buffers(count: usize) -> Vec<Buffer> {
     let mut buffer_ids = vec![0; count];
     safe_bindings::GenBuffers(buffer_ids.as_mut_slice());
+    log::trace!("generated {count} buffers: {:?}", buffer_ids.as_slice());
     buffer_ids.into_iter().map(Buffer).collect()
 }
 #[allow(clippy::must_use_candidate)]    // basically constructor, if it's called, it will be used
 pub fn gen_buffer() -> Buffer {
     let mut buffer_id = 0;
     safe_bindings::GenBuffer(&mut buffer_id);
+    log::trace!("generated buffer: {buffer_id}");
     Buffer(buffer_id)
 }
 pub fn delete_buffers(buffers: Vec<Buffer>) {
     let buffer_ids: Vec<u32> = buffers.into_iter().map(|b| b.0).collect();
     safe_bindings::DeleteBuffers(buffer_ids.as_slice());
+    log::trace!("deleted {} buffers: {:?}", buffer_ids.len(), buffer_ids);
 }
 pub fn delete_buffer(buffer: Buffer) {
     safe_bindings::DeleteBuffer(buffer.0);
+    log::trace!("deleted buffer: {}", buffer.0);
 }
 
 pub use safe_bindings::BufferType;
@@ -83,6 +87,7 @@ pub use safe_bindings::BufferType;
 /// # Errors
 /// Invalid Value: buffer was deleted
 pub fn bind_buffer(target: BufferType, buffer: Option<Buffer>) -> Result<(),OxError> {
+    log::trace!("binding buffer: {buffer:?} to {target:?}");
     safe_bindings::BindBuffer(target, buffer.map_or(0, |b| b.0));
     last_error_as_result()
 }
@@ -93,6 +98,7 @@ use crate::traits::ToByteVec;
 /// `GL_OUT_OF_MEMORY`
 pub fn buffer_data<T>(target: BufferType, data: Vec<T>, usage: BufferUsage) -> Result<(),OxError> 
     where T: ToByteVec {
+    log::trace!("buffering data of length {} to {target:?} for use {usage:?}", data.len());
     safe_bindings::BufferData(target, data.to_byte_vec().as_slice(), usage);
     last_error_as_result()
 }
@@ -105,6 +111,7 @@ pub fn buffer_data<T>(target: BufferType, data: Vec<T>, usage: BufferUsage) -> R
 /// offset in multiples of T
 pub fn buffer_subdata<T>(target: BufferType, subdata: Vec<T>, offset: usize) -> Result<(),OxError>
     where T: ToByteVec {
+    log::trace!("buffering subdata of length {} to {target:?} at offset {offset}", subdata.len());
     let byte_vec = subdata.to_byte_vec();
     safe_bindings::BufferSubData(target, byte_vec.as_slice(), offset * std::mem::size_of_val(&byte_vec));
     last_error_as_result()
@@ -119,25 +126,30 @@ pub struct VertexArray(u32);
 pub fn gen_vertex_arrays(count: usize) -> Vec<VertexArray> {
     let mut va_ids = vec![0; count];
     safe_bindings::GenVertexArrays(va_ids.as_mut_slice());
+    log::trace!("generated {count} vertex arrays: {:?}", va_ids.as_slice());
     va_ids.into_iter().map(VertexArray).collect()
 }
 #[allow(clippy::must_use_candidate)]    // basically constructor, if it's called, it will be used
 pub fn gen_vertex_array() -> VertexArray {
     let mut id = 0;
     safe_bindings::GenVertexArray(&mut id);
+    log::trace!("generated vertex array: {id}");
     VertexArray(id)
 }
 pub fn delete_vertex_arrays(vertex_arrays: Vec<VertexArray>) {
     let ids: Vec<u32> = vertex_arrays.into_iter().map(|v| v.0).collect();
     safe_bindings::DeleteVertexArrays(ids.as_slice());
+    log::trace!("deleted {} vertex arrays: {:?}", ids.len(), ids);
 }
 pub fn delete_vertex_array(vertex_array: VertexArray) {
     safe_bindings::DeleteVertexArray(vertex_array.0);
+    log::trace!("deleted vertex array: {}", vertex_array.0);
 }
 
 /// # Errors
 /// `GL_INVALID_VALUE`: `vertex_array` was deleted
 pub fn bind_vertex_array(vertex_array: Option<VertexArray>) -> Result<(),OxError>{
+    log::trace!("binding vertex array: {vertex_array:?}");
     safe_bindings::BindVertexArray(vertex_array.map_or(0, |va| va.0));
     last_error_as_result()
 }
@@ -146,6 +158,7 @@ pub fn bind_vertex_array(vertex_array: Option<VertexArray>) -> Result<(),OxError
 /// `GL_INVALID_OPERATON`: no vertex array object is bound
 /// `GL_INVALID_VALUE`: `attribute_index` >= `GL_MAX_VERTEX_ATTRIBS`
 pub fn enable_vertex_attrib_array(attribute_index: u8) -> Result<(),OxError> {
+    log::trace!("enabling vertex attribute array {attribute_index}");
     safe_bindings::EnableVertexAttribArray(attribute_index);
     last_error_as_result()
 }
@@ -285,6 +298,7 @@ pub enum FloatVertexFormat {
 /// `GL_INVALID_OPERATON`: array buffer bound to 0, offset != 0
 pub fn vertex_attrib_pointer(attribute_index: u8, spec: FloatVertexFormat,
     stride: usize, offset: usize) -> Result<(),OxError> {
+    log::trace!("registering pointer for float vertex attribute {attribute_index}, in format {spec:?}, with stride {stride}, at offset {offset}");
     let (size, data_type, normalise) = match spec {
         FloatVertexFormat::Size1 { normalise, data_type } => (AttribSize::One, data_type.into(), normalise),
         FloatVertexFormat::Size2 { normalise, data_type } => (AttribSize::Two, data_type.into(), normalise),
@@ -311,6 +325,7 @@ pub enum IntegralVertexFormat {
 /// `GL_INVALID_OPERATON`: array buffer bound to 0, offset != 0
 pub fn vertex_attrib_i_pointer(attribute_index: u8, spec: IntegralVertexFormat,
     stride: usize, offset: usize) -> Result<(),OxError> {
+    log::trace!("registering pointer for integer vertex attribute {attribute_index}, in format {spec:?}, with stride {stride}, at offset {offset}");
     let (size, data_type) = match spec {
         IntegralVertexFormat::Size1(data_type) => (IntegralAttribSize::One, data_type),
         IntegralVertexFormat::Size2(data_type) => (IntegralAttribSize::Two, data_type),
@@ -346,6 +361,7 @@ pub fn get_uint(parameter: UIntParameter) -> u32 {
     unsafe {
         safe_bindings::GetIntegerv(parameter, &mut data);
     }
+    log::trace!("got {parameter:?} = {}", data[0]);
     // CAST: only parameters corresponding to uints are allowed, so guaranteed positive
     #[allow(clippy::cast_sign_loss)]
     return data[0] as u32;
@@ -380,14 +396,21 @@ pub struct Shader(u32);
 ///
 /// This function will return an error if shader creation fails, no documentation as to why this may happen.
 pub fn create_shader(shader_type: ShaderType) -> Result<Shader,OxError> {
+    log::trace!("creating {shader_type:?} shader");
     match safe_bindings::CreateShader(shader_type) {
-        0 => Err(ShaderError::CreationFailed.into()),
-        id => Ok(Shader(id))
+        0 => {
+            Err(ShaderError::CreationFailed.into())
+        },
+        id => {
+            log::trace!("created {shader_type:?} shader: {id}");
+            Ok(Shader(id))
+        }
     }
 }
 /// # Errors
 /// `GL_INVALID_VALUE`: shader has been deleted
 pub fn delete_shader(shader: Shader) -> Result<(),OxError> {
+    log::trace!("deleting shader: {}", shader.0);
     safe_bindings::DeleteShader(shader.0);
     last_error_as_result()
 }
@@ -396,6 +419,7 @@ pub fn delete_shader(shader: Shader) -> Result<(),OxError> {
 /// `GL_INVALID_VALUE`: shader has been deleted
 pub fn shader_source<CS>(shader: Shader, sources: &[CS]) -> Result<(),OxError>
     where CS: AsRef<std::ffi::CStr> {
+    log::trace!("adding source(s) to shader {}, sources: {:?}", shader.0, sources.iter().map(AsRef::as_ref).collect::<Vec<_>>());
     safe_bindings::ShaderSource(shader.0, sources);
     last_error_as_result()
 }
@@ -404,6 +428,7 @@ pub fn shader_source<CS>(shader: Shader, sources: &[CS]) -> Result<(),OxError>
 /// `GL_INVALID_VALUE`: shader has been deleted
 /// `CompilationFailed`
 pub fn compile_shader(shader: Shader) -> Result<(),OxError> {
+    log::trace!("compiling shader: {}", shader.0);
     safe_bindings::CompileShader(shader.0);
     last_error_as_result()?;
     match get_shader_compile_status(shader).expect("shader valid as it compiled") {
@@ -422,6 +447,7 @@ pub enum ShaderCompileStatus {
 /// # Errors
 /// `GL_INVALID_VALUE`: shader has been deleted
 pub fn get_shader_compile_status(shader: Shader) -> Result<ShaderCompileStatus, OxError> {
+    log::trace!("getting shader {} compile status", shader.0);
     let mut data = 0;
     safe_bindings::GetShaderiv(shader.0, safe_bindings::ShaderParameter::CompileStatus, &mut data);
     last_error_as_result()?;
@@ -444,6 +470,7 @@ pub enum ShaderDeleteStatus {
 pub fn get_shader_delete_status(shader: Shader) -> Result<ShaderDeleteStatus, OxError> {
     let mut data = 0;
     safe_bindings::GetShaderiv(shader.0, safe_bindings::ShaderParameter::DeleteStatus, &mut data);
+    log::trace!("got shader {} delete status = {data}", shader.0);
     last_error_as_result()?;
     // CAST: `data` is really a bool
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -456,6 +483,7 @@ pub fn get_shader_delete_status(shader: Shader) -> Result<ShaderDeleteStatus, Ox
 /// # Errors
 /// `GL_INVALID_OPERATION`: shader has been deleted
 pub fn get_shader_info_log_length(shader: Shader) -> Result<usize, OxError> {
+    log::trace!("getting shader {} log length", shader.0);
     let mut data = 0;
     safe_bindings::GetShaderiv(shader.0, safe_bindings::ShaderParameter::InfoLogLength, &mut data);
     last_error_as_result()?;
@@ -466,6 +494,7 @@ pub fn get_shader_info_log_length(shader: Shader) -> Result<usize, OxError> {
 /// # Errors
 /// `GL_INVALID_OPERATION`: shader has been deleted
 pub fn get_shader_info_log(shader: Shader) -> Result<String, OxError> {
+    log::trace!("getting shader {} info log", shader.0);
     let mut buffer = vec![0; get_shader_info_log_length(shader)?];
     // shader valid as it successfully got the length -> no need for error checking
     safe_bindings::GetShaderInfoLog(shader.0, buffer.as_mut_slice(), None);
@@ -489,14 +518,19 @@ pub struct ShaderProgram(u32);
 ///
 /// This function will return an error if program creation fails, no documentation as to why this may happen.
 pub fn create_program() -> Result<ShaderProgram, OxError> {
+    log::trace!("creating shader program");
     match safe_bindings::CreateProgram() {
         0 => Err(ShaderError::ProgramCreationFailed.into()),
-        p => Ok(ShaderProgram(p))
+        p => {
+            log::trace!("created shader program {p}");
+            Ok(ShaderProgram(p))
+        }
     }
 }
 /// # Errors
 /// `GL_INVALID_VALUE`: program was deleted
 pub fn delete_program(program: ShaderProgram) -> Result<(),OxError> {
+    log::trace!("deleting shader program: {}", program.0);
     safe_bindings::DeleteProgram(program.0);
     last_error_as_result()
 }
@@ -505,6 +539,7 @@ pub fn delete_program(program: ShaderProgram) -> Result<(),OxError> {
 /// `GL_INVALID_VALUE`: program was deleted
 /// `GL_INVALID_OPERATION`: program is active, and transform feedback mode is active
 pub fn link_program(program: ShaderProgram) -> Result<(),OxError> {
+    log::trace!("linking shader program: {}", program.0);
     safe_bindings::LinkProgram(program.0);
     last_error_as_result()?;
     match get_program_link_status(program).expect("program linked, so must be valid") {
@@ -523,6 +558,7 @@ pub enum LinkStatus {
 /// # Errors
 /// `GL_INVALID_OPERATION`: program deleted
 pub fn get_program_link_status(program: ShaderProgram) -> Result<LinkStatus, OxError> {
+    log::trace!("getting shader program {} link status", program.0);
     let mut link_success = 0;
     safe_bindings::GetProgramiv(program.0, safe_bindings::ProgramParameter::LinkStatus, &mut link_success);
     last_error_as_result()?;
@@ -537,6 +573,7 @@ pub fn get_program_link_status(program: ShaderProgram) -> Result<LinkStatus, OxE
 /// # Errors
 /// `GL_INVALID_OPERATION`: program was deleted
 pub fn get_program_info_log_length(program: ShaderProgram) -> Result<usize, OxError> {
+    log::trace!("getting shader program {} info log", program.0);
     let mut data = 0;
     safe_bindings::GetProgramiv(program.0, safe_bindings::ProgramParameter::InfoLogLength, &mut data);
     last_error_as_result()?;
@@ -548,6 +585,7 @@ pub fn get_program_info_log_length(program: ShaderProgram) -> Result<usize, OxEr
 /// # Errors
 /// `GL_INVALID_OPERATION`: program was deleted
 pub fn get_program_info_log(program: ShaderProgram) -> Result<String, OxError> {
+    log::trace!("getting shader program {} info log", program.0);
     let mut buffer = vec![0; get_program_info_log_length(program)?];
     safe_bindings::GetProgramInfoLog(program.0, buffer.as_mut_slice(), None);
     // program valid as it got length -> no need for error checking
@@ -565,6 +603,7 @@ pub fn get_program_info_log(program: ShaderProgram) -> Result<String, OxError> {
 /// `GL_INVALID_VALUE`: shader, program deleted
 /// `GL_INVALID_OPERATON`: shader is already attached to program
 pub fn attach_shader(program: ShaderProgram, shader: Shader) -> Result<(), OxError> {
+    log::trace!("attaching shader {} to shader program {}", shader.0, program.0);
     safe_bindings::AttachShader(program.0, shader.0);
     last_error_as_result()
 }
@@ -572,6 +611,7 @@ pub fn attach_shader(program: ShaderProgram, shader: Shader) -> Result<(), OxErr
 /// `GL_INVALID_VALUE`: shader, program deleted
 /// `GL_INVALID_OPERATON`: shader is not attached to program
 pub fn detach_shader(program: ShaderProgram, shader: Shader) -> Result<(), OxError> {
+    log::trace!("attaching shader program {} from shader program {}", shader.0, program.0);
     safe_bindings::DetachShader(program.0, shader.0);
     last_error_as_result()
 }
@@ -579,6 +619,7 @@ pub fn detach_shader(program: ShaderProgram, shader: Shader) -> Result<(), OxErr
 /// `GL_INVALID_VALUE`: program deleted
 /// `GL_INVALID_OPERATON`: transform feedback mode is active
 pub fn use_program(program: ShaderProgram) -> Result<(),OxError> {
+    log::trace!("using shader program {}", program.0);
     safe_bindings::UseProgram(program.0);
     last_error_as_result()
 }
@@ -594,6 +635,7 @@ pub use safe_bindings::{DrawMode, IndexType};
 /// `GL_INVALID_OPERATON`: non-zero buffer object name is bound to an enabled array or the element array
 ///                         and the buffer object's data store is currently mapped
 pub fn draw_elements(mode: DrawMode, count: usize, index_type: IndexType, offset: usize) -> Result<(),OxError> {
+    log::trace!("drawing {count} vertices from elements of type {index_type:?} in mode {mode:?}, starting from {offset}");
     safe_bindings::DrawElements(mode, count, index_type, offset);
     last_error_as_result()
 }
@@ -603,6 +645,7 @@ pub fn draw_elements(mode: DrawMode, count: usize, index_type: IndexType, offset
 /// `GL_INVALID_OPERATON`: non-zero buffer object name is bound to an enabled array or the element array
 ///                         and the buffer object's data store is currently mapped
 pub fn draw_arrays(mode: DrawMode, first: usize, count: usize) -> Result<(),OxError> {
+    log::trace!("drawing {count} vertices from arrays in mode {mode:?}, starting from {first}");
     safe_bindings::DrawArrays(mode, first, count);
     last_error_as_result()
 }

@@ -8,16 +8,23 @@ use raw_gl_context::{GlConfig,GlContext};
 
 use owl::prelude::*;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
+    env_logger::init();
+    if let Err(e) = fallible_main() {
+        log::error!("{e}");
+    }
+}
+
+fn fallible_main() -> Result<(), Box<dyn std::error::Error>> {
     //
     // Setup
     //
 
-    let event_loop = EventLoop::new()?;
+    let event_loop = EventLoop::new().expect("unable to create event loop");
     event_loop.set_control_flow(ControlFlow::Poll);
     let window = WindowBuilder::new()
-        .with_inner_size(LogicalSize::new(800,600))
-        .with_title("Opengl Triangle")
+        .with_inner_size(LogicalSize::new(960,540))
+        .with_title("Opengl Shader Triangle")
         .with_enabled_buttons(WindowButtons::CLOSE)
         .build(&event_loop).expect("failed to create a window");
     // SAFETY: idk really, but calls into native windowing c libs
@@ -54,25 +61,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vertex_array_object = owl::VertexArray::new()
         .with_indices(index_buffer)
         .with_input(
-            owl::InputAttribute::Float {
-                name: "pos".to_owned(), glsl_type: owl::FloatAttributeType::Vec2,
-                data_format: owl::FloatVertexFormat::Size2 { normalise: false, data_type: owl::DataTypeUnsized::Float }
-            },
-            owl::AttributePointer {
-                buffer: &vertex_buffer,
+            owl::ThinInputAttribute::Float { name: "pos".to_owned(), glsl_type: owl::ThinFloatAttributeType::Vec2,
+                data_format: owl::FloatVertexFormat::Size2 { normalise: false, data_type: owl::DataTypeUnsized::Float } },
+            owl::AttributePointer { buffer: &vertex_buffer,
                 stride: test_vertex.stride(),
                 offset: test_vertex.field_offset(0).expect("has at least 1 field")
             }
         )?
         .with_input(
-            owl::InputAttribute::Integral {
-                name: "colour".to_owned(), glsl_type: owl::IntegralAttributeType::UVec3,
-                data_format: owl::IntegralVertexFormat::Size3(owl::IntegralDataType::UnsignedByte)
-            },
+            owl::ThinInputAttribute::Integral { name: "colour".to_owned(), glsl_type: owl::IntegralAttributeType::UVec3,
+                data_format: owl::IntegralVertexFormat::Size3(owl::IntegralDataType::UnsignedByte) },
             owl::AttributePointer {
                 buffer: &vertex_buffer,
                 stride: test_vertex.stride(),
-                offset: test_vertex.field_offset(1).expect("has at least 2 fields") }
+                offset: test_vertex.field_offset(1).expect("has at least 2 fields")
+            }
         )?;
 
     //

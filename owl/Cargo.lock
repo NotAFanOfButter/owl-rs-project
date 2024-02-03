@@ -190,6 +190,7 @@ version = "0.1.1"
 dependencies = [
  "bitflags 2.4.1",
  "gl",
+ "log",
  "raw-gl-context",
  "raw-window-handle 0.6.0",
  "trait-derives",

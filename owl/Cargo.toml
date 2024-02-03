@@ -16,6 +16,7 @@ missing_panics_doc = { level = "allow", priority = 1 }
 [dependencies]
 bitflags = "2.4.1"
 gl = "0.14.0"
+log = "0.4.20"
 raw-gl-context = { git = "https://github.com/glowcoil/raw-gl-context.git" }
 raw-window-handle = "0.6.0"
 trait-derives = { path = "trait-derives" }
