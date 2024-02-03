@@ -26,17 +26,6 @@ pub enum AttributeType {
     Mat3,
     Mat4
 }
-impl AttributeType {
-    /// Number of attributes this type will take up
-    pub(crate) const fn size(self) -> u8 {
-        match self {
-            Self::Int | Self::Bool | Self::Float | Self::Vec2 | Self::Vec3 | Self::Vec4 | Self::BVec2 | Self::BVec3 | Self::BVec4 | Self::IVec2 | Self::IVec3 | Self::IVec4 | Self::UVec2 | Self::UVec3 | Self::UVec4 => 1,
-            Self::Mat2 => 2,
-            Self::Mat3 => 3,
-            Self::Mat4 => 4,
-        }
-    }
-}
 impl std::fmt::Display for AttributeType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
@@ -115,12 +104,18 @@ impl From<IntegralAttributeType> for AttributeType {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum AttributeLength {
+    Single,
+    Array(usize)
+}
 /// Generic attribute with a name and glsl type,
 /// used as part of an input, uniform, or pipe
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Attribute {
     pub name: String,
     pub glsl_type: AttributeType,
+    pub length: AttributeLength,
 }
 
 #[derive(Debug, Clone)]
@@ -138,9 +133,9 @@ impl From<ThinInputAttribute> for Attribute {
     fn from(value: ThinInputAttribute) -> Self {
         match value {
             ThinInputAttribute::Integral { name, glsl_type, .. } =>
-                Self { name, glsl_type: glsl_type.into() },
+                Self { name, glsl_type: glsl_type.into(), length: AttributeLength::Single },
             ThinInputAttribute::Float { name, glsl_type, .. } =>
-                Self { name, glsl_type: glsl_type.into() },
+                Self { name, glsl_type: glsl_type.into(), length: AttributeLength::Single  },
         }
     }
 }
@@ -163,9 +158,9 @@ impl<'a, T: ToByteVec> MatInputAttributePointer<'a, T> {
 impl<'a, T: ToByteVec> From<MatInputAttributePointer<'a, T>> for Attribute {
     fn from(value: MatInputAttributePointer<'a, T>) -> Self {
         match value {
-            MatInputAttributePointer::Mat2 { name, .. } => Self { name, glsl_type: AttributeType::Mat2 },
-            MatInputAttributePointer::Mat3 { name, .. } => Self { name, glsl_type: AttributeType::Mat3 },
-            MatInputAttributePointer::Mat4 { name, .. } => Self { name, glsl_type: AttributeType::Mat4 },
+            MatInputAttributePointer::Mat2 { name, .. } => Self { name, glsl_type: AttributeType::Mat2, length: AttributeLength::Single  },
+            MatInputAttributePointer::Mat3 { name, .. } => Self { name, glsl_type: AttributeType::Mat3, length: AttributeLength::Single  },
+            MatInputAttributePointer::Mat4 { name, .. } => Self { name, glsl_type: AttributeType::Mat4, length: AttributeLength::Single  },
         }
     }
 }
@@ -188,21 +183,58 @@ impl Input {
     pub(crate) fn new_thin<T: ToByteVec>(index: u8, attribute: ThinInputAttribute,
         AttributePointer { buffer, stride, offset }: AttributePointer<T>) -> Self {
         buffer.bind();
-        match attribute {
+        let (name, glsl_type) = match attribute {
             ThinInputAttribute::Integral { name, glsl_type, data_format } => {
                 ox::vertex_attrib_i_pointer(index, data_format, stride.into(), offset.into())
                     .expect("buffer should be bound, and index checked");
-                Self {
-                    index, attribute: Attribute { name, glsl_type: glsl_type.into() }
-                }
+                (name, glsl_type.into())
             },
             ThinInputAttribute::Float { name, glsl_type, data_format } => {
                 ox::vertex_attrib_pointer(index, data_format, stride.into(), offset.into())
                     .expect("buffer should be bound, and index checked");
-                Self {
-                    index, attribute: Attribute { name, glsl_type: glsl_type.into() }
-                }
+                (name, glsl_type.into())
             },
+        };
+        Self {
+            index, attribute: Attribute { name, glsl_type, length: AttributeLength::Single  }
+        }
+    }
+    pub(crate) fn new_thin_array<T: ToByteVec>(index: u8, length: u8, attribute: ThinInputAttribute,
+        AttributePointer { buffer, stride, offset }: AttributePointer<T>) -> Self {
+        buffer.bind();
+        let (name, glsl_type) = match attribute {
+            ThinInputAttribute::Integral { name, glsl_type, data_format } => {
+                let datum_stride = match data_format {
+                    IntegralVertexFormat::Size1(data_type) => data_type.size_bytes(),
+                    IntegralVertexFormat::Size2(data_type) => data_type.size_bytes() * 2,
+                    IntegralVertexFormat::Size3(data_type) => data_type.size_bytes() * 3,
+                    IntegralVertexFormat::Size4(data_type) => data_type.size_bytes() * 4,
+                };
+                for i in 0..length {
+                    ox::vertex_attrib_i_pointer(index+i, data_format, stride.into(),
+                        usize::from(offset) + datum_stride * usize::from(i))
+                        .expect("buffer should be bound, and index checked");
+                }
+                (name, glsl_type.into())
+            },
+            ThinInputAttribute::Float { name, glsl_type, data_format } => {
+                let datum_stride = match data_format {
+                    FloatVertexFormat::Size1 { data_type, .. } => ox::DataType::from(data_type).size_bytes(),
+                    FloatVertexFormat::Size2 { data_type, .. } => ox::DataType::from(data_type).size_bytes() * 2,
+                    FloatVertexFormat::Size3 { data_type, .. } => ox::DataType::from(data_type).size_bytes() * 3,
+                    FloatVertexFormat::Size4 { data_type, .. } => ox::DataType::from(data_type).size_bytes() * 4,
+                    FloatVertexFormat::SizeBgra(data_type) => ox::DataType::from(data_type).size_bytes() * 4,
+                };
+                for i in 0..length {
+                    ox::vertex_attrib_pointer(index+i, data_format, stride.into(),
+                         usize::from(offset) + datum_stride * usize::from(i))
+                        .expect("buffer should be bound, and index checked");
+                }
+                (name, glsl_type.into())
+            },
+        };
+        Self {
+            index, attribute: Attribute { name, glsl_type, length: AttributeLength::Array(usize::from(length)) }
         }
     }
     pub(crate) fn new_mat<T: ToByteVec>(index: u8, attribute: MatInputAttributePointer<T>) -> Self {
@@ -215,7 +247,7 @@ impl Input {
                     .expect("buffer should be bound, and index checked");
                 }
                 Self {
-                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat2 }
+                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat2, length: AttributeLength::Single  }
                 }
             },
             MatInputAttributePointer::Mat3 { name, normalise, pointers, data_type } => {
@@ -226,7 +258,7 @@ impl Input {
                     .expect("buffer should be bound, and index checked");
                 }
                 Self {
-                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat3 }
+                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat3, length: AttributeLength::Single  }
                 }
             },
             MatInputAttributePointer::Mat4 { name, normalise, pointers, data_type } => {
@@ -237,7 +269,7 @@ impl Input {
                     .expect("buffer should be bound, and index checked");
                 }
                 Self {
-                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat4 }
+                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat4, length: AttributeLength::Single  }
                 }
             }
         }
@@ -322,7 +354,7 @@ impl ShaderPipeline {
             version: glsl_version,
             vertex: VertexShader { shader: vertex, source: CString::default() },
             fragment: FragmentShader { shader: fragment, source: CString::default(),
-                output: Attribute { name: String::default(), glsl_type: AttributeType::Vec4 } },
+                output: Attribute { name: String::default(), glsl_type: AttributeType::Vec4, length: AttributeLength::Single  } },
             inputs: Vec::new(),
             pipes: Vec::new(),
         })
@@ -362,16 +394,24 @@ impl ShaderPipeline {
         let version_prelude = format!("#version {} core\n", self.version);
         let vertex_source = {
             let input_to_glsl = |i: &Input| {
-                format!("layout (location = {}) in {} {};\n", i.index, i.attribute.glsl_type, i.attribute.name)
+                let array_qualifier = match i.attribute.length {
+                    AttributeLength::Single => String::new(),
+                    AttributeLength::Array(length) => format!("[{length}]")
+                };
+                format!("layout (location = {}) in {} {}{array_qualifier};\n", i.index, i.attribute.glsl_type, i.attribute.name)
             };
             let ins_prelude: String = self.inputs.iter().map(input_to_glsl).collect();
             let body = self.vertex.source.into_string().expect("created from &str, so valid UTF-8");
             #[allow(clippy::unnecessary_filter_map)] // more variants later will require filtering
             let pipes_prelude: String = self.pipes.iter()
                 .filter_map(|Pipe { targets, attribute }| {
+                    let array_qualifier = match attribute.length {
+                        AttributeLength::Single => String::new(),
+                        AttributeLength::Array(length) => format!("[{length}]")
+                    };
                     match targets {
                         PipeTargets::VertexFragment => Some(
-                            format!("out {} {};\n", attribute.glsl_type, attribute.name)
+                            format!("out {} {}{array_qualifier};\n", attribute.glsl_type, attribute.name)
                         )
                     }
             }).collect();
@@ -383,9 +423,13 @@ impl ShaderPipeline {
             #[allow(clippy::unnecessary_filter_map)] // more variants later will require filtering
             let pipes_prelude: String = self.pipes.iter()
                 .filter_map(|Pipe { targets, attribute }| {
+                    let array_qualifier = match attribute.length {
+                        AttributeLength::Single => String::new(),
+                        AttributeLength::Array(length) => format!("[{length}]")
+                    };
                     match targets {
                         PipeTargets::VertexFragment => Some(
-                            format!("in {} {};\n", attribute.glsl_type, attribute.name)
+                            format!("in {} {}{array_qualifier};\n", attribute.glsl_type, attribute.name)
                         )
                     }
             }).collect();

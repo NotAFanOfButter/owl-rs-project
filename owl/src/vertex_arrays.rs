@@ -28,29 +28,49 @@ impl InputArray {
             length: 0
         }
     }
+    /// # Errors
+    /// This function will return an error if the max number of inputs is reached
     fn push<T: ToByteVec>(&mut self, attribute: ThinInputAttribute, pointer: AttributePointer<T>) -> Result<(),OwlError> {
-        if self.length > self.capacity {
+        if self.length >= self.capacity {
             Err(OwlError::custom("maximum inputs reached"))
         } else {
-            self.length += 1;
             self.container.push(Input::new_thin(self.length, attribute, pointer ));
             ox::enable_vertex_attrib_array(self.length)
                 .expect("vertex array bound, and next_index <= max_indices");
+            self.length += 1;
             Ok(())
         }
     }
+    /// # Errors
+    /// This function will return an error if the max number of inputs is reached
     fn push_mat<T: ToByteVec>(&mut self, attribute_pointer: MatInputAttributePointer<T>) -> Result<(),OwlError> {
         let new_length = self.length + attribute_pointer.size();
         if new_length > self.capacity {
             Err(OwlError::custom("maximum inputs reached"))
         } else {
-            self.length = new_length;
             self.container.push(Input::new_mat(self.length, attribute_pointer));
-            for i in self.length..new_length {
-                let index = i - 1;
+            for index in self.length..new_length {
                 ox::enable_vertex_attrib_array(index)
                     .expect("vertex array bound, and next_index <= max_indices");
             }
+            self.length = new_length;
+            Ok(())
+        }
+    }
+    /// # Errors
+    /// This function will return an error if the max number of inputs is reached or the number of pointers > `u8::MAX`,
+    // which would exceed the max anyway
+    fn push_array<T: ToByteVec>(&mut self, length: u8, attribute: ThinInputAttribute, pointer: AttributePointer<T>) -> Result<(),OwlError> {
+        let new_length = self.length + length;
+        if new_length > self.capacity {
+            Err(OwlError::custom("maximum inputs reached"))
+        } else {
+            self.container.push(Input::new_thin_array(self.length, length, attribute, pointer));
+            for index in self.length..new_length {
+                ox::enable_vertex_attrib_array(index)
+                    .expect("vertex array bound, and next_index <= max_indices");
+            }
+            self.length = new_length;
             Ok(())
         }
     }
@@ -81,6 +101,14 @@ impl<T: ToByteVec> VertexArray<T> {
         buffer.bind();
         self.elements = Some(buffer);
         self
+    }
+    /// # Errors
+    ///
+    /// This function will return an error if the maximum number of inputs is exceeded.
+    pub fn with_input_array<U: ToByteVec>(mut self, length: u8, attribute: ThinInputAttribute, pointer: AttributePointer<U>) -> Result<Self,OwlError> {
+        self.bind();
+        self.inputs.push_array(length, attribute, pointer)?;
+        Ok(self)
     }
     /// # Errors
     ///

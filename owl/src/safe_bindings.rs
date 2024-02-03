@@ -919,6 +919,18 @@ impl From<DrawMode> for gl::types::GLenum {
         }
     }
 }
+impl DataType {
+    #[must_use]
+    pub const fn size_bytes(&self) -> usize {
+        match self {
+            Self::Byte | Self::UnsignedByte => 1,
+            Self::Short | Self::UnsignedShort | Self::HalfFloat => 2,
+            Self::Int  | Self::UnsignedInt | Self::Float | Self::Fixed | Self::Int2_10_10_10Rev |
+                Self::UnsignedInt2_10_10_10Rev | Self::UnsignedInt10f11f11fRev => 4,
+            Self::Double => 8,
+        }
+    }
+}
 impl From<DataType> for gl::types::GLenum {
     fn from(val: DataType) -> Self {
         match val {
@@ -935,6 +947,16 @@ impl From<DataType> for gl::types::GLenum {
             DataType::Int2_10_10_10Rev => gl::INT_2_10_10_10_REV,
             DataType::UnsignedInt2_10_10_10Rev => gl::UNSIGNED_INT_2_10_10_10_REV,
             DataType::UnsignedInt10f11f11fRev => gl::UNSIGNED_INT_10F_11F_11F_REV,
+        }
+    }
+}
+impl IntegralDataType {
+    #[must_use]
+    pub const fn size_bytes(&self) -> usize {
+        match self {
+            Self::Byte | Self::UnsignedByte => 1,
+            Self::Short | Self::UnsignedShort=> 2,
+            Self::Int | Self::UnsignedInt => 4,
         }
     }
 }

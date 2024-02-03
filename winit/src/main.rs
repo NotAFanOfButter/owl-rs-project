@@ -85,7 +85,8 @@ fn fallible_main() -> Result<(), Box<dyn std::error::Error>> {
         .inputs_from_vertex_array(&vertex_array_object)
         .pipe(owl::Pipe {
             targets: owl::PipeTargets::VertexFragment,
-            attribute: owl::Attribute { name: "vertColour".to_owned(), glsl_type: owl::AttributeType::Vec3 }
+            attribute: owl::Attribute { name: "vertColour".to_owned(), glsl_type: owl::AttributeType::Vec3,
+                length: owl::AttributeLength::Single }
             })
         // TODO: from file
         .vertex_body(r"
@@ -99,7 +100,8 @@ fn fallible_main() -> Result<(), Box<dyn std::error::Error>> {
                 colour = vec4(vertColour, 1.0);
             }
             ",
-            owl::Attribute { name: "colour".to_string(), glsl_type: owl::AttributeType::Vec4 })
+            owl::Attribute { name: "colour".to_string(), glsl_type: owl::AttributeType::Vec4,
+                length: owl::AttributeLength::Single })
             .expect("no nul bytes")
         .compile()?;
     
