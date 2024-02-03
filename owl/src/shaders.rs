@@ -1,6 +1,6 @@
 use std::ffi::CString;
 
-use crate::{IntegralVertexFormat, FloatVertexFormat, AttributePointer, OwlError, VertexArray};
+use crate::{IntegralVertexFormat, FloatVertexFormat, AttributePointer, OwlError, VertexArray, DataTypeUnsized, DataTypeSize3, DataTypeSize4};
 use crate::prelude::*;
 use crate::ox;
 
@@ -25,6 +25,17 @@ pub enum AttributeType {
     Mat2,
     Mat3,
     Mat4
+}
+impl AttributeType {
+    /// Number of attributes this type will take up
+    pub(crate) const fn size(self) -> u8 {
+        match self {
+            Self::Int | Self::Bool | Self::Float | Self::Vec2 | Self::Vec3 | Self::Vec4 | Self::BVec2 | Self::BVec3 | Self::BVec4 | Self::IVec2 | Self::IVec3 | Self::IVec4 | Self::UVec2 | Self::UVec3 | Self::UVec4 => 1,
+            Self::Mat2 => 2,
+            Self::Mat3 => 3,
+            Self::Mat4 => 4,
+        }
+    }
 }
 impl std::fmt::Display for AttributeType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -54,7 +65,7 @@ impl std::fmt::Display for AttributeType {
 
 /// Corresponds to a floating point (at least natively) glsl type
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum FloatAttributeType {
+pub enum ThinFloatAttributeType {
     Bool,
     Float,
     Vec2,
@@ -63,24 +74,18 @@ pub enum FloatAttributeType {
     BVec2,
     BVec3,
     BVec4,
-    Mat2,
-    Mat3,
-    Mat4
 }
-impl From<FloatAttributeType> for AttributeType {
-    fn from(value: FloatAttributeType) -> Self {
+impl From<ThinFloatAttributeType> for AttributeType {
+    fn from(value: ThinFloatAttributeType) -> Self {
         match value {
-            FloatAttributeType::Bool => Self::Bool,
-            FloatAttributeType::Float => Self::Float,
-            FloatAttributeType::Vec2 => Self::Vec2,
-            FloatAttributeType::Vec3 => Self::Vec3,
-            FloatAttributeType::Vec4 => Self::Vec4,
-            FloatAttributeType::BVec2 => Self::BVec2,
-            FloatAttributeType::BVec3 => Self::BVec3,
-            FloatAttributeType::BVec4 => Self::BVec4,
-            FloatAttributeType::Mat2 => Self::Mat2,
-            FloatAttributeType::Mat3 => Self::Mat3,
-            FloatAttributeType::Mat4 => Self::Mat4,
+            ThinFloatAttributeType::Bool => Self::Bool,
+            ThinFloatAttributeType::Float => Self::Float,
+            ThinFloatAttributeType::Vec2 => Self::Vec2,
+            ThinFloatAttributeType::Vec3 => Self::Vec3,
+            ThinFloatAttributeType::Vec4 => Self::Vec4,
+            ThinFloatAttributeType::BVec2 => Self::BVec2,
+            ThinFloatAttributeType::BVec3 => Self::BVec3,
+            ThinFloatAttributeType::BVec4 => Self::BVec4,
         }
     }
 }
@@ -118,18 +123,49 @@ pub struct Attribute {
     pub glsl_type: AttributeType,
 }
 
-#[derive(Debug, Clone)] // not necessarily unique, could be on different buffers ==> not Eq, Hash, etc...
-pub enum InputAttribute {
-    Integral { name: String, glsl_type: IntegralAttributeType, data_format: IntegralVertexFormat },
-    Float { name: String, glsl_type: FloatAttributeType, data_format: FloatVertexFormat },
+#[derive(Debug, Clone)]
+pub enum InputAttribute<'a, T: ToByteVec> {
+    Thin(ThinInputAttribute, AttributePointer<'a, T>),
+    Mat(MatInputAttributePointer<'a, T>)
 }
-impl From<InputAttribute> for Attribute {
-    fn from(value: InputAttribute) -> Self {
+
+#[derive(Debug, Clone)] // not necessarily unique, could be on different buffers ==> not Eq, Hash, etc...
+pub enum ThinInputAttribute {
+    Integral { name: String, glsl_type: IntegralAttributeType, data_format: IntegralVertexFormat },
+    Float { name: String, glsl_type: ThinFloatAttributeType, data_format: FloatVertexFormat },
+}
+impl From<ThinInputAttribute> for Attribute {
+    fn from(value: ThinInputAttribute) -> Self {
         match value {
-            InputAttribute::Integral { name, glsl_type, .. } =>
+            ThinInputAttribute::Integral { name, glsl_type, .. } =>
                 Self { name, glsl_type: glsl_type.into() },
-            InputAttribute::Float { name, glsl_type, .. } =>
+            ThinInputAttribute::Float { name, glsl_type, .. } =>
                 Self { name, glsl_type: glsl_type.into() },
+        }
+    }
+}
+
+#[derive(Debug, Clone)] // not necessarily unique, could be on different buffers ==> not Eq, Hash, etc...
+pub enum MatInputAttributePointer<'a, T: ToByteVec> {
+    Mat2 { name: String, normalise: bool, pointers: [AttributePointer<'a,T>;2], data_type: DataTypeUnsized },
+    Mat3 { name: String, normalise: bool, pointers: [AttributePointer<'a,T>;3], data_type: DataTypeSize3 },
+    Mat4 { name: String, normalise: bool, pointers: [AttributePointer<'a,T>;4], data_type: DataTypeSize4 }
+}
+impl<'a, T: ToByteVec> MatInputAttributePointer<'a, T> {
+    pub(crate) const fn size(&self) -> u8 {
+        match self {
+            Self::Mat2 { .. } => 2,
+            Self::Mat3 { .. } => 3,
+            Self::Mat4 { .. } => 4,
+        }
+    }
+}
+impl<'a, T: ToByteVec> From<MatInputAttributePointer<'a, T>> for Attribute {
+    fn from(value: MatInputAttributePointer<'a, T>) -> Self {
+        match value {
+            MatInputAttributePointer::Mat2 { name, .. } => Self { name, glsl_type: AttributeType::Mat2 },
+            MatInputAttributePointer::Mat3 { name, .. } => Self { name, glsl_type: AttributeType::Mat3 },
+            MatInputAttributePointer::Mat4 { name, .. } => Self { name, glsl_type: AttributeType::Mat4 },
         }
     }
 }
@@ -148,25 +184,62 @@ impl Input {
     //         .expect("buffer should be bound, and index checked");
     //     Self { index, attribute }
     // }
-    pub(crate) fn new<T: ToByteVec>(index: u8, attribute: InputAttribute,
+    /// Create a new non-matrix input
+    pub(crate) fn new_thin<T: ToByteVec>(index: u8, attribute: ThinInputAttribute,
         AttributePointer { buffer, stride, offset }: AttributePointer<T>) -> Self {
-        let (stride, offset) = (stride.0, offset.0);
         buffer.bind();
         match attribute {
-            InputAttribute::Integral { name, glsl_type, data_format } => {
-                ox::vertex_attrib_i_pointer(index, data_format, stride, offset)
+            ThinInputAttribute::Integral { name, glsl_type, data_format } => {
+                ox::vertex_attrib_i_pointer(index, data_format, stride.into(), offset.into())
                     .expect("buffer should be bound, and index checked");
                 Self {
                     index, attribute: Attribute { name, glsl_type: glsl_type.into() }
                 }
             },
-            InputAttribute::Float { name, glsl_type, data_format } => {
-                ox::vertex_attrib_pointer(index, data_format, stride, offset)
+            ThinInputAttribute::Float { name, glsl_type, data_format } => {
+                ox::vertex_attrib_pointer(index, data_format, stride.into(), offset.into())
                     .expect("buffer should be bound, and index checked");
                 Self {
                     index, attribute: Attribute { name, glsl_type: glsl_type.into() }
                 }
             },
+        }
+    }
+    pub(crate) fn new_mat<T: ToByteVec>(index: u8, attribute: MatInputAttributePointer<T>) -> Self {
+        match attribute {
+            MatInputAttributePointer::Mat2 { name, normalise, pointers, data_type } => {
+                for p in pointers {
+                    p.buffer.bind();
+                    ox::vertex_attrib_pointer(index, FloatVertexFormat::Size2 { normalise, data_type },
+                        p.stride.into(), p.offset.into())
+                    .expect("buffer should be bound, and index checked");
+                }
+                Self {
+                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat2 }
+                }
+            },
+            MatInputAttributePointer::Mat3 { name, normalise, pointers, data_type } => {
+                for p in pointers {
+                    p.buffer.bind();
+                    ox::vertex_attrib_pointer(index, FloatVertexFormat::Size3 { normalise, data_type },
+                        p.stride.into(), p.offset.into())
+                    .expect("buffer should be bound, and index checked");
+                }
+                Self {
+                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat3 }
+                }
+            },
+            MatInputAttributePointer::Mat4 { name, normalise, pointers, data_type } => {
+                for p in pointers {
+                    p.buffer.bind();
+                    ox::vertex_attrib_pointer(index, FloatVertexFormat::Size4 { normalise, data_type },
+                        p.stride.into(), p.offset.into())
+                    .expect("buffer should be bound, and index checked");
+                }
+                Self {
+                    index, attribute: Attribute { name, glsl_type: AttributeType::Mat4 }
+                }
+            }
         }
     }
 }
@@ -192,6 +265,7 @@ struct VertexShader {
 struct FragmentShader {
     shader: ox::Shader,
     source: CString,
+    output: Attribute
 }
 
 /// Newtype allowing for deletion on drop
@@ -228,7 +302,6 @@ pub struct ShaderPipeline {
     fragment: FragmentShader,
     inputs: Vec<Input>,
     pipes: Vec<Pipe>,
-    output: Attribute
 }
 
 impl ShaderPipeline {
@@ -248,36 +321,32 @@ impl ShaderPipeline {
         Ok(Self {
             version: glsl_version,
             vertex: VertexShader { shader: vertex, source: CString::default() },
-            fragment: FragmentShader { shader: fragment, source: CString::default() },
+            fragment: FragmentShader { shader: fragment, source: CString::default(),
+                output: Attribute { name: String::default(), glsl_type: AttributeType::Vec4 } },
             inputs: Vec::new(),
-            output: Attribute { name: String::default(), glsl_type: AttributeType::Vec4 },
             pipes: Vec::new(),
         })
     }
-    pub fn inputs_from_vertex_array<T: ToByteVec>(self, vertex_array: &VertexArray<T>) -> Self {
-        Self {
-            inputs: vertex_array.inputs.clone(),
-            ..self
-        }
+    pub fn inputs_from_vertex_array<T: ToByteVec>(mut self, vertex_array: &VertexArray<T>) -> Self {
+        self.inputs = vertex_array.inputs.container.clone();
+        self
     }
     /// # Errors
     ///
     /// This function will return an error if `source` contains nul bytes.
-    pub fn vertex_body(self, source: &str) -> Result<Self,std::ffi::NulError> {
-        Ok(Self {
-            vertex: VertexShader { source: CString::new(source)?, ..self.vertex  },
-            ..self
-        })
+    pub fn vertex_body(mut self, source: &str) -> Result<Self,std::ffi::NulError> {
+        self.vertex.source = CString::new(source)?;
+        Ok(self)
     }
     /// # Errors
     ///
     /// This function will return an error if `source` contains nul bytes.
-    pub fn fragment_body(self, source: &str, output: Attribute) -> Result<Self,std::ffi::NulError> {
-        Ok(Self {
-            fragment: FragmentShader { source: CString::new(source)?, ..self.fragment },
-            output,
-            ..self
-        })
+    pub fn fragment_body(mut self, source: &str, output: Attribute) -> Result<Self,std::ffi::NulError> {
+        self.fragment = FragmentShader {
+            source: CString::new(source)?, output,
+            ..self.fragment
+        };
+        Ok(self)
     }
     pub fn pipe(mut self, pipe: Pipe) -> Self {
         self.pipes.push(pipe);
@@ -320,7 +389,7 @@ impl ShaderPipeline {
                         )
                     }
             }).collect();
-            let out_prelude = format!("out {} {};\n", self.output.glsl_type, self.output.name);
+            let out_prelude = format!("out {} {};\n", self.fragment.output.glsl_type, self.fragment.output.name);
             let body = self.fragment.source.into_string().expect("created from &str, so valid UTF-8");
             CString::new(version_prelude + &pipes_prelude + &out_prelude + &body)
                 .expect("created from a collection of valid UTF-8 strings, so must be valid")

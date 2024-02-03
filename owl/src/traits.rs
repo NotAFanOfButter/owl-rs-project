@@ -1,5 +1,10 @@
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Bytes(pub usize);
+impl From<Bytes> for usize {
+    fn from(value: Bytes) -> Self {
+        value.0
+    }
+}
 
 /// A trait to enable buffers to store data as byte representations
 pub trait ToByteVec {
